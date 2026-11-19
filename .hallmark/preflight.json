@@ -1,0 +1,13 @@
+{
+  "scanned": "2026-11-19",
+  "findings": {
+    "framework": "Two existing standalone games, no blog scaffold or package manifest.",
+    "games": ["chess/index.html:1", "gameGPT/neon-serpent/dist/index.html:1"],
+    "material": "Actual game screens, user-supplied blog title and two game names.",
+    "absent": "No articles, resource files, author portrait, testimonials or fabricated statistics."
+  },
+  "preserve": ["All existing game source files and game storage."],
+  "introduce": ["Local blog shell", "Halftone cream and coral visual system", "Empty resources folder", "Read-only file index"],
+  "direction": "User explicitly selected bright and playful; local Chinese system fonts support offline use.",
+  "draw_swap": "Ecosystem Index replaces Narrative Workflow: this blog is for browsing existing materials and two games, not a staged process. Top navigation replaces search-led chrome; search belongs in the resource view."
+}
