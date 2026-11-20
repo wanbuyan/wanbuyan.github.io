@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f9fc">
+  <meta name="theme-color" content="#f8f7f3">
   <meta name="description" content="万不言的博客，提供学习资料索引、象棋和贪吃蛇游戏入口。">
   <title>万不言的博客</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/artworks.js" defer></script>
   <script src="assets/resources.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
@@ -43,9 +44,12 @@
         <div class="hero-copy">
           <h1 id="home-title">万不言的博客</h1>
           <p>学习资料与自制游戏</p>
+          <div class="hero-links"><a class="button primary" href="#resources"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>资料仓库</a><a class="button secondary" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-game"/></svg>自制游戏</a><a id="prank-link" class="button secondary" href="https://www.bilibili.com/video/BV1GJ411x7h7/">原神攻略</a></div>
         </div>
-        <span class="hero-divider" aria-hidden="true"></span>
-        <div class="hero-links"><a class="button primary" href="#resources"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>资料仓库</a><a class="button secondary" href="#games"><svg class="icon" aria-hidden="true"><use href="#i-game"/></svg>自制游戏</a></div>
+        <figure class="hero-art" aria-labelledby="hero-art-caption">
+          <div class="art-pages" id="hero-art-pages" aria-live="polite" aria-atomic="true"><div class="art-page"><img src="资料/水浒人物/宋江-02.jpeg" width="640" height="870" alt="戴敦邦绘水浒人物宋江" fetchpriority="high"><span class="art-name">宋江</span><p class="art-description">及时雨宋江。见《水浒传》第十八回，郓城押司之宋公明，后为梁山第一寨主，终招安。〔未辨〕乙亥春，戴敦邦作造型图。</p></div><div class="art-page"><img src="资料/水浒人物/公孙胜-01.jpeg" width="640" height="869" alt="戴敦邦绘水浒人物公孙胜" fetchpriority="high"><span class="art-name">公孙胜</span><p class="art-description">公孙胜。见《水浒传》第五十四回，入云龙斗法破高廉。若此情节删本中删去亦可；〔未辨〕公孙先生梁山入伙后，常代法祭祀。乙亥，戴敦邦作《水》剧人物造型。</p></div></div>
+          <figcaption id="hero-art-caption"><span>戴敦邦《水浒人物》</span><div class="art-caption-actions"><a href="https://www.sohu.com/a/449542309_523187" target="_blank" rel="noopener noreferrer">插图来源<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a><button class="button secondary art-refresh" id="refresh-artworks" type="button" aria-controls="hero-art-pages"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>换一组</button></div><p class="inscription-note" id="inscription-note" hidden>〔未辨〕表示原图中尚未确认的字句。</p></figcaption>
+        </figure>
       </section>
 
       <section class="resource-overview" aria-labelledby="overview-title">
@@ -63,12 +67,17 @@
     <div class="page" data-page="resources">
       <section class="page-intro"><h1>资料仓库</h1><p>支持文件搜索、分类、预览与下载</p></section>
       <section class="resource-workspace" aria-label="资料列表">
-        <div class="resource-toolbar"><label class="search-field"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="visually-hidden">搜索资料名称或路径</span><input id="resource-search" name="search" type="search" placeholder="搜索资料名称或路径…" autocomplete="off"></label><button class="button secondary" id="reset-resources" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>重置筛选</button></div>
+        <div class="resource-toolbar"><label class="search-field"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><span class="visually-hidden">搜索名称、题字或路径</span><input id="resource-search" name="search" type="search" placeholder="搜索名称、题字或路径…" autocomplete="off"></label><button class="button secondary" id="reset-resources" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>重置筛选</button></div>
         <div class="resource-filters" role="group" aria-label="按资料类型筛选"><button type="button" data-filter="all" aria-pressed="true">全部</button><button type="button" data-filter="document" aria-pressed="false">文档</button><button type="button" data-filter="code" aria-pressed="false">代码</button><button type="button" data-filter="image" aria-pressed="false">图片</button><button type="button" data-filter="other" aria-pressed="false">其他</button></div>
         <div class="resource-summary"><span><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg>全部资料</span><span id="resource-summary" role="status" aria-live="polite">正在读取资料…</span></div>
         <div class="resource-state" id="resource-state" role="status" aria-live="polite"><svg class="empty-icon icon" aria-hidden="true"><use href="#i-folder"/></svg><h2>正在读取资料</h2></div>
         <div class="resource-list" id="resource-list"></div>
-        <p class="resource-help">文件来源：资料文件夹</p>
+        <nav class="resource-pagination" id="resource-pagination" aria-label="资料分页" hidden>
+          <button class="button secondary" id="resource-previous" type="button">上一页</button>
+          <span id="resource-page-status" role="status" aria-live="polite"></span>
+          <button class="button secondary" id="resource-next" type="button">下一页</button>
+        </nav>
+        <p class="resource-help">文件来源：资料文件夹。〔未辨〕表示原图中尚未确认的字句。</p>
       </section>
     </div>
 
@@ -82,6 +91,6 @@
     <div class="page" data-page="about"><section class="page-intro"><h1>关于</h1></section><section class="pending-space" aria-label="关于待开发"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><h2>待开发</h2></section></div>
     <noscript><p class="noscript-note">导航和资料搜索需要 JavaScript。也可以直接打开 <a href="chess/index.html">象棋</a> 或 <a href="gameGPT/neon-serpent/dist/index.html">贪吃蛇</a>。</p></noscript>
   </main>
-  <footer class="site-footer container"><a href="#home" class="footer-name">万不言的博客</a><span>© 2026 万不言</span></footer>
+  <footer class="site-footer container"><a href="#home" class="footer-name">万不言的博客</a><a class="art-credit" href="https://www.sohu.com/a/449542309_523187" target="_blank" rel="noopener noreferrer">插图：戴敦邦《水浒人物》</a><span>© 2026 万不言</span></footer>
 </body>
 </html>

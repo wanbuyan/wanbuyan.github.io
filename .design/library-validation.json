@@ -1,0 +1,21 @@
+{
+  "result": "PASS",
+  "checks": 460,
+  "images": 181,
+  "names": 160,
+  "sha256Verified": 181,
+  "modes": [
+    "file://",
+    "static /blog/ subdirectory"
+  ],
+  "widths": [
+    320,
+    390,
+    768,
+    1024,
+    1280,
+    1920
+  ],
+  "errors": [],
+  "descriptions": "Expanded side inscriptions; unresolved cursive marked explicitly, full text displayed"
+}

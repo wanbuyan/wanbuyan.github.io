@@ -24,14 +24,14 @@ try {
   await page.goto(site, { waitUntil: 'load' });
   await page.evaluate(() => document.fonts.ready);
   check(await page.locator('[data-page="home"]').isVisible(), 'Home opens directly from disk');
-  check(await page.locator('[data-resource-count]').textContent() === '0 份资料', 'Static count works without API');
+  check(await page.locator('[data-resource-count]').textContent() === '181 份资料', 'Static count works without API');
   for (const route of ['resources', 'games', 'notes', 'about', 'home']) {
     await page.locator(`.site-nav a[href="#${route}"]`).click();
     await page.locator(`[data-page="${route}"]`).waitFor({ state: 'visible' });
     check(await page.locator('.page:visible').count() === 1, `Disk route ${route} works`);
   }
   await page.goto(site + '#resources');
-  check(await page.locator('#resource-state h2').textContent() === '暂无资料', 'Disk repository displays empty state');
+  check(await page.locator('.resource-row').count() === 20, 'Disk repository displays the first page of actual image files');
   await page.goto(site + '#games');
   for (const [index, expected] of ['中国象棋', 'Neon Serpent'].entries()) {
     const popupPromise = page.waitForEvent('popup');
@@ -53,6 +53,7 @@ try {
   await mkdir(fixture);
   await cp(path.join(root, 'index.html'), path.join(fixture, 'index.html'));
   await cp(path.join(root, 'assets'), path.join(fixture, 'assets'), { recursive: true });
+  await cp(path.join(root, '资料'), path.join(fixture, '资料'), { recursive: true });
   await mkdir(path.join(fixture, '资料', '课程'), { recursive: true });
   const records = [{ path: '课程/中文 #&%.txt', size: 12 }, { name: '代码示例', path: '示例.py' }, { path: '截图.PNG' }];
   await writeFile(path.join(fixture, 'assets', 'resources.js'), `window.BLOG_RESOURCES = ${JSON.stringify(records)};`);

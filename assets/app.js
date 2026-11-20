@@ -1,5 +1,33 @@
 "use strict";
 
+const heroArtworks = Array.isArray(window.BLOG_ARTWORKS) ? window.BLOG_ARTWORKS : [];
+
+function randomizeHeroArtworks({ excludeCurrent = false } = {}) {
+  const cards = [...document.querySelectorAll(".hero-art .art-page")];
+  const currentIds = new Set(cards.map(card => Number(card.dataset.artworkId)));
+  const available = excludeCurrent ? heroArtworks.filter(artwork => !currentIds.has(artwork.id)) : heroArtworks;
+  const shuffled = [...(available.length >= cards.length ? available : heroArtworks)];
+  for (let index = shuffled.length - 1; index > 0; index--) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  cards.forEach((page, index) => {
+    const artwork = shuffled[index];
+    if (!artwork) return;
+    const img = page.querySelector("img");
+    img.src = artwork.src;
+    img.width = artwork.width;
+    img.height = artwork.height;
+    img.alt = `戴敦邦绘：${artwork.character}`;
+    page.dataset.artworkId = artwork.id;
+    page.querySelector(".art-name").textContent = artwork.character;
+    page.querySelector(".art-description").textContent = artwork.description;
+  });
+  document.querySelector("#inscription-note").hidden = !shuffled.slice(0, cards.length).some(artwork => artwork.description.includes("〔未辨〕"));
+}
+randomizeHeroArtworks();
+document.querySelector("#refresh-artworks").addEventListener("click", () => randomizeHeroArtworks({ excludeCurrent: true }));
+
 const games = [
   { name: "象棋", href: "chess/index.html", image: "assets/images/chess.png", key: "chess", description: "人机对弈、技能挑战与杀棋练习", tags: ["人机对弈", "技能挑战", "杀棋练习"] },
   { name: "贪吃蛇", href: "gameGPT/neon-serpent/dist/index.html", image: "assets/images/snake.png", key: "snake", description: "随机强化、连击冲刺与触屏操作", tags: ["随机强化", "连击冲刺", "触屏可玩"] }
@@ -84,12 +112,18 @@ route();
 
 let resources = [];
 let selectedType = "all";
+let currentResourcePage = 1;
+const resourcesPerPage = 20;
 let loadState = "ready";
 const search = document.querySelector("#resource-search");
 const state = document.querySelector("#resource-state");
 const resourceList = document.querySelector("#resource-list");
 const summary = document.querySelector("#resource-summary");
 const reset = document.querySelector("#reset-resources");
+const pagination = document.querySelector("#resource-pagination");
+const previousResourcePage = document.querySelector("#resource-previous");
+const nextResourcePage = document.querySelector("#resource-next");
+const pageStatus = document.querySelector("#resource-page-status");
 const typeNames = { document: "文档", code: "代码", image: "图片", other: "其他" };
 
 function showState(title, copy) {
@@ -110,20 +144,42 @@ function formatSize(bytes) {
 
 function renderResources() {
   resourceList.replaceChildren();
+  pagination.hidden = true;
   if (loadState === "error") { summary.textContent = "读取失败"; showState("资料目录加载失败", "请检查资料目录文件后刷新页面。"); return; }
   const term = search.value.trim().toLocaleLowerCase();
-  const matched = resources.filter(file => (selectedType === "all" || file.type === selectedType) && `${file.name} ${file.path}`.toLocaleLowerCase().includes(term));
+  const matched = resources.filter(file => (selectedType === "all" || file.type === selectedType) && `${file.name} ${file.path} ${file.description}`.toLocaleLowerCase().includes(term));
   summary.textContent = term || selectedType !== "all" ? `找到 ${matched.length} 份 / 共 ${resources.length} 份资料` : `共 ${resources.length} 份资料`;
   if (!resources.length) { showState("暂无资料", ""); return; }
   if (!matched.length) { showState("没有找到匹配的资料", "请修改搜索关键词或文件类型。"); return; }
   state.hidden = true;
-  for (const file of matched) {
+  const totalPages = Math.ceil(matched.length / resourcesPerPage);
+  currentResourcePage = Math.max(1, Math.min(currentResourcePage, totalPages));
+  pagination.hidden = totalPages <= 1;
+  previousResourcePage.disabled = currentResourcePage === 1;
+  nextResourcePage.disabled = currentResourcePage === totalPages;
+  pageStatus.textContent = `第 ${currentResourcePage} / ${totalPages} 页`;
+  for (const file of matched.slice((currentResourcePage - 1) * resourcesPerPage, currentResourcePage * resourcesPerPage)) {
     const row = document.createElement("article"); row.className = "resource-row";
-    row.append(icon("file", "resource-file-icon icon"));
+    if (file.type === "image") {
+      const thumbnail = new Image();
+      thumbnail.className = "resource-thumb";
+      thumbnail.src = file.url;
+      thumbnail.alt = "";
+      thumbnail.width = 56;
+      thumbnail.height = 72;
+      thumbnail.loading = "lazy";
+      row.append(thumbnail);
+    } else row.append(icon("file", "resource-file-icon icon"));
     const info = document.createElement("div");
     const name = document.createElement("a"); name.className = "resource-name"; name.textContent = file.name; name.href = file.url; name.target = "_blank"; name.rel = "noopener";
     const path = document.createElement("p"); path.className = "resource-path"; path.textContent = file.path.includes("/") ? file.path.slice(0, file.path.lastIndexOf("/")) : "资料 /";
     info.append(name, path);
+    if (file.description) {
+      const description = document.createElement("p");
+      description.className = "resource-description";
+      description.textContent = file.description;
+      info.append(description);
+    }
     const type = document.createElement("span"); type.className = "resource-type"; type.textContent = typeNames[file.type] || "其他";
     const size = document.createElement("span"); size.className = "resource-size"; size.textContent = formatSize(file.size);
     const download = document.createElement("a"); download.className = "resource-download"; download.href = file.url; download.download = file.name; download.setAttribute("aria-label", `下载 ${file.name}`); download.append(icon("download"), "下载");
@@ -147,7 +203,7 @@ function loadResources() {
       const name = typeof file.name === "string" && file.name.trim() ? file.name : parts.at(-1);
       const extension = parts.at(-1).split(".").at(-1).toLowerCase();
       const type = Object.hasOwn(typeNames, file.type) ? file.type : Object.keys(types).find(key => types[key].includes(extension)) || "other";
-      return { name, path: file.path, type, size: file.size, url: `资料/${parts.map(encodeURIComponent).join("/")}` };
+      return { name, path: file.path, type, size: file.size, description: typeof file.description === "string" ? file.description : "", url: `资料/${parts.map(encodeURIComponent).join("/")}` };
     });
     loadState = "ready";
     for (const count of document.querySelectorAll("[data-resource-count]")) count.textContent = `${resources.length} 份资料`;
@@ -157,16 +213,25 @@ function loadResources() {
   }
   renderResources();
 }
-search.addEventListener("input", renderResources);
+search.addEventListener("input", () => { currentResourcePage = 1; renderResources(); });
+function changeResourcePage(delta) {
+  currentResourcePage += delta;
+  renderResources();
+  document.querySelector(".resource-workspace").scrollIntoView({ block: "start" });
+}
+previousResourcePage.addEventListener("click", () => changeResourcePage(-1));
+nextResourcePage.addEventListener("click", () => changeResourcePage(1));
 reset.addEventListener("click", () => {
   search.value = "";
   selectedType = "all";
+  currentResourcePage = 1;
   for (const filter of document.querySelectorAll("[data-filter]")) filter.setAttribute("aria-pressed", String(filter.dataset.filter === "all"));
   renderResources();
 });
 for (const button of document.querySelectorAll("[data-filter]")) {
   button.addEventListener("click", () => {
     selectedType = button.dataset.filter;
+    currentResourcePage = 1;
     for (const filter of document.querySelectorAll("[data-filter]")) filter.setAttribute("aria-pressed", String(filter === button));
     renderResources();
   });

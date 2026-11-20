@@ -1,6 +1,16 @@
 /* 资料静态目录。path 相对于“资料”文件夹，支持子文件夹。
+ * 水浒图片共用 artworks.js 的目录，首页与资料仓库保持同步。
  * 示例（仅说明格式，不会显示在页面中）：
- * { name: "学习笔记.pdf", path: "学习笔记.pdf", size: 102400 }
+ * { name: "学习笔记.pdf", path: "学习笔记.pdf", size: 102400, description: "课程笔记" }
  * size 单位为字节，可以省略；type 可选 document、code、image、other，默认按后缀分类。
  */
-window.BLOG_RESOURCES = [];
+window.BLOG_RESOURCES = [
+  ...(window.BLOG_ARTWORKS || []).map(artwork => ({
+    name: artwork.fileName,
+    path: artwork.path,
+    type: "image",
+    size: artwork.size,
+    description: artwork.description
+  }))
+  // 添加其他资料时，在上一项后加逗号，再填写条目。
+];

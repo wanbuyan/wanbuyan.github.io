@@ -1,0 +1,28 @@
+{
+  "result": "PASS",
+  "checks": 47,
+  "artworkPool": [
+    "呼延灼",
+    "杨志",
+    "武松",
+    "宋江",
+    "公孙胜"
+  ],
+  "resources": [
+    "呼延灼.jpg",
+    "杨志.jpg",
+    "公孙胜.jpg",
+    "武松.jpg"
+  ],
+  "widths": [
+    320,
+    390,
+    768,
+    1024,
+    1280,
+    1920
+  ],
+  "destination": "https://www.bilibili.com/video/BV1GJ411x7h7/",
+  "note": "Footer link navigation verified with intercepted destination; video playback not tested.",
+  "errors": []
+}
