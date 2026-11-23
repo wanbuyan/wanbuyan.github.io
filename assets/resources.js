@@ -5,6 +5,13 @@
  * size 单位为字节，可以省略；type 可选 document、code、image、other，默认按后缀分类。
  */
 window.BLOG_RESOURCES = [
+  {
+    name: "DC-2靶场全流程——万不言.docx",
+    path: "DC-2靶场全流程——万不言.docx",
+    type: "document",
+    size: 3858572,
+    description: "DC-2 靶场全流程文档。"
+  },
   ...(window.BLOG_ARTWORKS || []).map(artwork => ({
     name: artwork.fileName,
     path: artwork.path,
@@ -12,5 +19,5 @@ window.BLOG_RESOURCES = [
     size: artwork.size,
     description: artwork.description
   }))
-  // 添加其他资料时，在上一项后加逗号，再填写条目。
+  // 其他资料可添加在此数组中，条目之间用逗号分隔。
 ];
