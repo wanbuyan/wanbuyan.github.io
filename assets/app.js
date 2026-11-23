@@ -29,8 +29,8 @@ randomizeHeroArtworks();
 document.querySelector("#refresh-artworks").addEventListener("click", () => randomizeHeroArtworks({ excludeCurrent: true }));
 
 const games = [
-  { name: "象棋", href: "chess/index.html", image: "assets/images/chess.png", key: "chess", description: "人机对弈、技能挑战与杀棋练习", tags: ["人机对弈", "技能挑战", "杀棋练习"] },
-  { name: "贪吃蛇", href: "gameGPT/neon-serpent/dist/index.html", image: "assets/images/snake.png", key: "snake", description: "随机强化、连击冲刺与触屏操作", tags: ["随机强化", "连击冲刺", "触屏可玩"] }
+  { name: "象棋", href: "chess/index.html", image: "assets/images/chess-cover.svg", key: "chess", description: "人机对弈、练习指导与沙盘推演", tags: ["人机对弈", "练习指导", "沙盘推演"] },
+  { name: "贪吃蛇", href: "gameGPT/neon-serpent/dist/index.html", image: "assets/images/snake-cover.svg", key: "snake", description: "随机强化、连击冲刺与触屏操作", tags: ["随机强化", "连击冲刺", "触屏可玩"] }
 ];
 
 function icon(name, className = "icon") {
@@ -50,12 +50,11 @@ for (const list of document.querySelectorAll("[data-game-list]")) {
     const picture = document.createElement("a");
     picture.className = `game-picture game-picture-${game.key}`;
     picture.href = game.href;
-    picture.target = "_blank";
-    picture.rel = "noopener";
-    picture.setAttribute("aria-label", `打开${game.name}，新标签页`);
+    picture.dataset.gameTitle = game.name;
+    picture.setAttribute("aria-label", `打开${game.name}`);
     const img = new Image();
     img.src = game.image;
-    img.alt = game.name === "象棋" ? "象棋游戏真实棋盘画面" : "霓虹贪吃蛇的绿色像素赛场";
+    img.alt = game.name === "象棋" ? "中国象棋封面：楚河棋盘上的红黑棋子" : "贪吃蛇封面：深蓝赛场上的绿色蛇与食物";
     img.width = game.key === "chess" ? 1000 : 1200;
     img.height = 900;
     img.loading = "lazy";
@@ -71,24 +70,31 @@ for (const list of document.querySelectorAll("[data-game-list]")) {
     const play = document.createElement("a");
     play.href = game.href;
     play.className = "text-link";
-    play.target = "_blank";
-    play.rel = "noopener";
+    play.dataset.gameTitle = game.name;
     play.textContent = "开始游戏";
-    play.setAttribute("aria-label", `开始${game.name}，新标签页`);
+    play.setAttribute("aria-label", `开始${game.name}`);
     caption.append(text, play);
     article.append(picture, caption);
     list.append(article);
   }
 }
 
+document.addEventListener("click", event => {
+  const link = event.target.closest?.("a[data-game-title]");
+  if (!link || event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || !window.BlogPageTransition?.navigate) return;
+  event.preventDefault();
+  window.BlogPageTransition.navigate(link.href, link.dataset.gameTitle);
+});
+
 const pages = [...document.querySelectorAll("[data-page]")];
 const nav = document.querySelector("#site-nav");
 const menu = document.querySelector(".menu-toggle");
-const titles = { home: "首页", resources: "资料仓库", games: "自制游戏", notes: "随笔", about: "关于" };
+const titles = { home: "首页", resources: "资料仓库", games: "自制游戏", posts: "帖子", notes: "随笔", about: "关于" };
 let previousPage;
 function closeMenu() { nav.classList.remove("is-open"); menu.setAttribute("aria-expanded", "false"); menu.setAttribute("aria-label", "展开导航"); }
 function route() {
-  let current = location.hash.slice(1) || "home";
+  const [pageName, postId] = location.hash.slice(1).split("/");
+  let current = pageName || "home";
   if (!Object.hasOwn(titles, current)) { current = "home"; history.replaceState(null, "", "#home"); }
   for (const page of pages) page.hidden = page.dataset.page !== current;
   for (const link of nav.querySelectorAll("a")) {
@@ -96,9 +102,11 @@ function route() {
     else link.removeAttribute("aria-current");
   }
   document.title = current === "home" ? "万不言的博客" : `${titles[current]} | 万不言的博客`;
+  if (current === "posts") window.renderBlogPosts(postId);
   closeMenu();
-  if (previousPage && previousPage !== current) { window.scrollTo({ top: 0, behavior: "instant" }); document.querySelector("#main").focus({ preventScroll: true }); }
-  previousPage = current;
+  const routeKey = current + (current === "posts" && postId ? "/" + postId : "");
+  if (previousPage && previousPage !== routeKey) { window.scrollTo({ top: 0, behavior: "instant" }); document.querySelector("#main").focus({ preventScroll: true }); }
+  previousPage = routeKey;
 }
 menu.addEventListener("click", () => {
   const open = menu.getAttribute("aria-expanded") !== "true";

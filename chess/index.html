@@ -2,12 +2,16 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
+  <style>html { background: #f8f7f3; }</style>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="离线中国象棋，支持技能挑战、娱乐对局、杀棋练习和无限悔棋。">
   <title>中国象棋</title>
+  <link rel="stylesheet" href="../assets/page-transition.css?v=20261123-5">
+  <script src="../assets/page-transition.js?v=20261123-5" data-title="象棋" data-wait="game"></script>
   <link rel="stylesheet" href="style.css">
   <script defer src="skills.js"></script>
   <script defer src="engine.js"></script>
+  <script defer src="training.js"></script>
   <script defer src="game.js"></script>
 </head>
 <body>
@@ -61,6 +65,7 @@
             <button type="button" class="action" id="practice-continue" hidden>继续，看看电脑怎么杀</button>
           </div>
         </section>
+        <div class="sandbox-board-bar" id="sandbox-board-bar" hidden><p id="sandbox-board-turn" role="status"></p><div class="board-guide-actions"><button class="action" id="sandbox-board-back" type="button">后退一步</button><button class="action" id="sandbox-board-exit" type="button">退出沙盘，返回对局</button></div></div>
         <div class="island-dock" id="island-dock" hidden>
           <div class="island-map" role="img" aria-label="黑蒋位于台湾省小岛上">
             <img src="taiwan-island.png" alt="" width="88" height="64">
@@ -113,6 +118,28 @@
         </label>
       </section>
 
+      <section class="record sandbox-panel" id="sandbox-section" aria-labelledby="sandbox-title" hidden>
+        <div class="record-heading"><h2 id="sandbox-title">沙盘推演</h2><span id="sandbox-state">独立试走</span></div>
+        <p id="sandbox-summary">从当前局面开始，双方轮流试走。退出后恢复原对局。</p>
+        <button class="action sandbox-start" id="sandbox-enter" type="button">进入沙盘</button>
+        <div id="sandbox-controls" hidden>
+          <div class="sandbox-navigation"><button class="action" id="sandbox-back" type="button">后退一步</button><button class="action" id="sandbox-forward" type="button">前进一步</button><button class="action" id="sandbox-reset" type="button">回到起点</button><button class="action" id="sandbox-reply" type="button">电脑走一步</button></div>
+          <p class="training-note">可手动操作双方。退回后改走会保留原分支；点选走法可切换。</p>
+          <ol id="sandbox-path" class="sandbox-path" aria-label="当前推演路线"></ol>
+          <div id="sandbox-branches" class="sandbox-branches" aria-label="后续分支"></div>
+          <button class="action action-primary" id="sandbox-exit" type="button">退出沙盘，返回对局</button>
+        </div>
+      </section>
+
+      <section class="record training-panel" id="training-panel" aria-labelledby="training-heading" hidden>
+        <div class="record-heading"><h2 id="training-heading">局面指导</h2><span id="training-state" role="status"></span></div>
+        <p id="training-advice" aria-live="polite">正在分析局面。</p>
+        <div class="training-actions"><button class="action" id="coach-hint" type="button" aria-pressed="false">显示参考走法</button></div>
+        <h3>受攻击的棋子</h3>
+        <ul id="training-risks" class="training-risks"></ul>
+        <p class="training-note">橙框标记直接受威胁的棋子；虚线表示有回吃保护。提示采用有限搜索，交换判断只检查立即回吃。</p>
+      </section>
+
       <section class="record skills-panel" id="skills-panel" aria-labelledby="skills-title">
         <div class="record-heading">
           <h2 id="skills-title">已获得的技能</h2>
@@ -148,7 +175,7 @@
           <label><input type="radio" name="opening-mode" value="casual"><span>娱乐对局</span></label>
           <label><input type="radio" name="opening-mode" value="practice"><span>练习模式</span></label>
         </div>
-        <p class="practice-setup" id="practice-setup" hidden>用普通象棋规则与电脑对弈，练习发现一步杀和找出防守走法。</p>
+        <p class="practice-setup" id="practice-setup" hidden>按普通象棋规则对弈，提供参考走法、受攻击棋子提示和一步杀预警，可进入沙盘试走。</p>
       </fieldset>
       <fieldset class="settings opening-settings">
         <legend>执棋方（红方先走）</legend>

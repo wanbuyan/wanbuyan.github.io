@@ -52,6 +52,13 @@
   const practiceRetry = byId("practice-retry");
   const practiceContinue = byId("practice-continue");
   const practiceSetup = byId("practice-setup");
+  const training = window.createXiangqiTraining(engine);
+  let sandbox = null;
+  let coaching = null;
+  let coachJob = null;
+  let coachPreview = false;
+  let riskPreview = null;
+  let riskyTargets = new Set();
   const surface = byId("board-surface");
   const canvas = byId("lines");
   const context = canvas.getContext("2d");
@@ -148,7 +155,7 @@
   const copyChallenge = () => challenge && {
     ...challenge, levels: challenge.levels.slice(), crossedPawns: challenge.crossedPawns.slice()
   };
-  const visibleBoard = () => draftPreview?.board ?? board;
+  const visibleBoard = () => sandbox?.current.board ?? draftPreview?.board ?? board;
   const visibleSkills = () => draftPreview?.skills ?? challenge;
 
   const cells = Array.from({ length: 90 }, (_, square) => {
@@ -231,7 +238,8 @@
 
   function drawGuides() {
     const threat = threatPreview?.threat;
-    const coaching = practice?.preview;
+    const coaching = riskPreview ? { kind: "line", move: riskPreview.move } : coachPreview && coachingReport()?.move
+      ? { kind: "hint", move: coachingReport().move } : sandbox ? null : practice?.preview;
     guideCanvas.hidden = !sweepSelection && !threat?.path && !coaching?.move;
     guideCanvas.toggleAttribute("data-practice", Boolean(coaching?.move));
     if (guideCanvas.hidden || !guideContext || !boardSize) return;
@@ -315,6 +323,7 @@
     conversionSquares = null;
     sweepSelection = null;
     threatPreview = null;
+    riskyTargets = new Set();
   }
 
   function changeVisit(key, delta) {
@@ -850,11 +859,11 @@
 
   function renderBoard() {
     const position = visibleBoard(), skills = visibleSkills();
-    const activeSide = draftPreview ? humanSide : turn;
+    const activeSide = sandbox ? sandbox.current.side : draftPreview ? humanSide : turn;
     const hiddenSide = draftPreview ? -humanSide : turn;
-    const checkedNow = draftPreview ? engine.inCheck(position, activeSide, undefined, skills) : checked;
+    const checkedNow = sandbox || draftPreview ? engine.inCheck(position, activeSide, undefined, skills) : checked;
     islandDock.hidden = !engine.kingOnIsland(position, BLACK);
-    const last = draftPreview ? draftPreview.moves.at(-1) : history.at(-1);
+    const last = sandbox ? sandbox.current : draftPreview ? draftPreview.moves.at(-1) : history.at(-1);
     const checkedSquare = checkedNow ? position.indexOf(activeSide * KING) : -1;
     const compensation = offer?.ready ? offer.compensation : null;
     const destinations = new Set(sweepSelection ? sweepSelection.moves.map(move => move.hit) :
@@ -862,7 +871,8 @@
     const restricted = new Set(sweepSelection ? sweepSelection.blocked.map(option => option.move.hit) :
       blockedMoves.map(option => option.move.to));
     const threat = threatPreview?.threat;
-    const canSelect = Boolean(draftPreview || started && !offer && turn === humanSide && !result) && !conversionSquares && !sweepSelection;
+    const canSelect = Boolean(sandbox || draftPreview || started && !offer && turn === humanSide && !result) && !conversionSquares && !sweepSelection;
+    const risks = coachingReport()?.risks ?? [];
     const action = sweepSelection ? "，可扫穴击杀" : compensation ? "，可补偿击杀" : conversionSquares ? "，可附体" : "，可落子";
     cells.forEach(({ button, stone, warning }, square) => {
       const piece = position[square];
@@ -878,7 +888,9 @@
       const description = location + "，" + name + (skill ? "，" + skill : "") +
         (hidden ? "，隐身免疫" : "") + (target ? action : "") + (restrictedHere ? "，有受限走法，点击查看原因" : "") +
         (previewPiece ? "，正在试用" + draftPreview.name : "") +
-        (square === threat?.from ? "，预览中的攻击方" : "");
+        (square === threat?.from ? "，预览中的攻击方" : "") +
+        (risks.some(risk => risk.square === square) ? "，受攻击" : "") +
+        (riskyTargets.has(square) ? "，落子后可能被直接吃取" : "");
       if (button.getAttribute("aria-label") !== description) button.setAttribute("aria-label", description);
       if (level && button.dataset.skilled !== String(level)) button.dataset.skilled = level;
       else if (!level) button.removeAttribute("data-skilled");
@@ -887,7 +899,11 @@
       if (button.getAttribute("aria-pressed") !== pressed) button.setAttribute("aria-pressed", pressed);
       button.toggleAttribute("data-red", piece > 0);
       button.toggleAttribute("data-occupied", Boolean(piece));
-      button.toggleAttribute("data-playable", Boolean(canSelect && piece * humanSide > 0));
+      button.toggleAttribute("data-playable", Boolean(canSelect && piece * (sandbox ? activeSide : humanSide) > 0));
+      const risk = risks.find(risk => risk.square === square);
+      button.toggleAttribute("data-risk", Boolean(risk && risk.severity !== "attacked"));
+      button.toggleAttribute("data-guarded-risk", risk?.severity === "attacked");
+      button.toggleAttribute("data-risk-target", riskyTargets.has(square));
       button.toggleAttribute("data-last", square === last?.move?.from || square === last?.move?.to || square === last?.conversion?.square);
       button.toggleAttribute("data-selected", square === selected);
       button.toggleAttribute("data-target", target);
@@ -947,7 +963,7 @@
   }
 
   function renderPractice() {
-    practiceGuide.hidden = !practice || Boolean(result);
+    practiceGuide.hidden = !practice || Boolean(result) || Boolean(sandbox);
     if (practiceGuide.hidden) return;
     const { warning, tactics, preview } = practice;
     const paused = warning && !practice.demonstrating;
@@ -1109,6 +1125,14 @@
   }
 
   function renderStatus() {
+    if (sandbox) {
+      for (const side of [RED, BLACK]) players[side].querySelector(".player-turn").hidden = side !== sandbox.current.side;
+      setStatus("演", "沙盘 · " + sideName(sandbox.current.side) + "走棋", "双方均可手动操作，试走不会改变原对局。", "neutral");
+      undoButton.disabled = !sandbox.current.parent;
+      convertButton.disabled = true;
+      passButton.hidden = true;
+      return;
+    }
     for (const side of [RED, BLACK]) {
       players[side].querySelector(".player-turn").hidden = side !== (draftPreview ? humanSide : turn) || Boolean(result);
     }
@@ -1300,9 +1324,11 @@
     renderRecord();
     renderSkills();
     renderPractice();
+    syncTraining();
   }
 
   function selectSquare(square) {
+    if (sandbox) { selectSandboxSquare(square); return; }
     if (!draftPreview && (!started || turn !== humanSide || result)) return;
     if (!draftPreview && offer) {
       if (offer.ready && offer.compensation) {
@@ -1374,6 +1400,14 @@
     const options = engine.inspectMoves(visibleBoard(), humanSide, square, visibleSkills());
     targets = options.moves;
     blockedMoves = options.blocked;
+    riskyTargets = new Set();
+    if (practice) {
+      for (const move of targets) {
+        const position = board.slice();
+        engine.makeMove(position, move);
+        if (training.threats(position, humanSide).some(risk => risk.square === move.to && risk.severity !== "attacked")) riskyTargets.add(move.to);
+      }
+    }
     renderBoard();
     renderStatus();
   }
@@ -1521,16 +1555,18 @@
   }
 
   function advanceGame() {
+    if (sandbox) return;
     if (offer) showDraw();
     else if (result) showEndDialog();
     else if (turn !== humanSide && !(practice?.warning && !practice.demonstrating)) scheduleComputer();
   }
 
   async function showEndDialog() {
+    if (sandbox) return;
     const outcome = result;
     if (!outcome || outcome === shownResult) return;
     if (activeMovement) await activeMovement.animation.finished.catch(() => {});
-    if (result !== outcome || restartDialog.open || islandDialog.open || resultDialog.open) return;
+    if (sandbox || result !== outcome || restartDialog.open || islandDialog.open || resultDialog.open) return;
     if (outcome.reason === "island-offer") {
       islandDetail.textContent = checked ? "黑将已被将死。登岛算黑方走一手。" : "黑方已困毙。登岛算黑方走一手。";
       islandDialog.returnValue = "no";
@@ -1611,6 +1647,7 @@
   }
 
   function undo() {
+    if (sandbox) { sandbox.back(); updateSandbox(); return; }
     if (draftPreview) {
       undoDraftTrial();
       return;
@@ -1639,6 +1676,11 @@
   }
 
   function newGame(begin = true) {
+    sandbox = null;
+    stopCoach();
+    coaching = null;
+    coachPreview = false;
+    riskPreview = null;
     stopComputer();
     clearPlayback();
     board = engine.initialBoard();
@@ -1667,7 +1709,210 @@
     if (begin) advanceGame();
   }
 
+  function trainingKey() {
+    if (sandbox) return engine.positionKey(sandbox.current.board, sandbox.current.side);
+    return practice && started && !result && turn === humanSide ? currentKey() : null;
+  }
+
+  function coachingReport() {
+    return coaching?.key === trainingKey() ? coaching.report : null;
+  }
+
+  function stopCoach() {
+    if (!coachJob) return;
+    clearTimeout(coachJob.timer);
+    coachJob.worker?.terminate();
+    if (coachJob.url) URL.revokeObjectURL(coachJob.url);
+    coachJob = null;
+  }
+
+  function syncTraining() {
+    byId("sandbox-board-bar").hidden = !sandbox;
+    byId("sandbox-section").hidden = !started || mode === "challenge";
+    byId("sandbox-enter").hidden = Boolean(sandbox);
+    byId("sandbox-controls").hidden = !sandbox;
+    byId("sandbox-enter").disabled = engine.kingOnIsland(board, BLACK);
+    if (!sandbox) {
+      byId("sandbox-summary").textContent = engine.kingOnIsland(board, BLACK)
+        ? "登岛局面不适用普通象棋推演；可在登岛前进入沙盘。" : "从当前局面开始，双方轮流试走。退出后恢复原对局。";
+      byId("sandbox-state").textContent = "独立试走";
+    }
+    restartButton.disabled = Boolean(sandbox);
+    difficultySettings.disabled = Boolean(sandbox);
+    byId("record-title").textContent = sandbox ? "原对局走棋记录" : "走棋记录";
+    document.body.classList.toggle("is-sandbox", Boolean(sandbox));
+    const key = trainingKey();
+    if (!key) {
+      stopCoach();
+      coaching = null;
+      coachPreview = false;
+      riskPreview = null;
+      renderTraining();
+      return;
+    }
+    if (coaching?.key === key || coachJob?.key === key) { renderTraining(); return; }
+    stopCoach();
+    coaching = null;
+    coachPreview = false;
+    riskPreview = null;
+    const position = visibleBoard().slice();
+    const side = sandbox ? sandbox.current.side : humanSide;
+    const visits = sandbox ? sandbox.visits() : Object.fromEntries(repetitions);
+    const job = { key, worker: null, url: null, timer: null };
+    coachJob = job;
+    const finish = report => {
+      if (coachJob !== job || trainingKey() !== key) return;
+      stopCoach();
+      coaching = { key, report };
+      renderTraining();
+      if (sandbox) renderSandbox();
+      renderBoard();
+    };
+    const fallback = () => {
+      if (coachJob !== job) return;
+      finish(training.analyze(position, side, visits, 35));
+    };
+    try {
+      const source = engine.workerSource() + "\nconst trainer = (" + window.createXiangqiTraining.toString() + ")(engine);\nself.onmessage = ({ data }) => self.postMessage(trainer.analyze(data.board, data.side, data.visits));";
+      job.url = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+      job.worker = new Worker(job.url);
+      job.worker.onmessage = event => finish(event.data);
+      job.worker.onerror = event => { event.preventDefault(); fallback(); };
+      job.worker.postMessage({ board: position, side, visits });
+      job.timer = setTimeout(fallback, 8000);
+    } catch { job.timer = setTimeout(fallback, 0); }
+    renderTraining();
+    renderBoard();
+  }
+
+  function renderTraining() {
+    const panel = byId("training-panel");
+    panel.hidden = !sandbox && !practice;
+    if (panel.hidden) return;
+    const report = coachingReport();
+    const risks = byId("training-risks");
+    const hint = byId("coach-hint");
+    byId("training-state").textContent = report ? "分析完成" : trainingKey() ? "分析中" : "等待走棋";
+    hint.disabled = !report?.move;
+    hint.setAttribute("aria-pressed", String(coachPreview));
+    hint.textContent = coachPreview ? "收起参考走法" : "显示参考走法";
+    let advice = report ? report.move ? "可参考：" + engine.notation(visibleBoard(), report.move) + "。" + report.reason : "当前一方没有合法走法。" : trainingKey() ? "正在检查将帅安全、受攻击棋子与下一步走法。" : result ? "本局已结束，可进入沙盘复盘。" : practice?.warning ? "对手存在一步杀。可查看杀法、悔棋，或进入沙盘寻找防守。" : "等待电脑走棋，随后更新局面指导。";
+    if (report?.reply && coachPreview) {
+      const next = visibleBoard().slice();
+      engine.makeMove(next, report.move);
+      advice += " 对方可能应：" + engine.notation(next, report.reply) + "。";
+    }
+    byId("training-advice").textContent = advice;
+    const entries = (report?.risks ?? []).map(risk => {
+      const item = document.createElement("li");
+      const button = uiButton(engine.pieceName(risk.piece) + " · " + squareLabel(risk.square), () => {
+        riskPreview = riskPreview === risk ? null : risk;
+        coachPreview = false;
+        renderTraining();
+        renderBoard();
+      });
+      button.setAttribute("aria-pressed", String(riskPreview === risk));
+      const detail = document.createElement("p");
+      detail.textContent = "受到对方" + engine.pieceName(risk.attacker) + "攻击；" + risk.reason + "。";
+      item.dataset.severity = risk.severity;
+      item.append(button, detail);
+      return item;
+    });
+    if (!entries.length) {
+      const item = document.createElement("li");
+      item.textContent = report ? report.checked ? "当前被将军，先按合法落点应将。" : "未发现对手可立即吃取的己方棋子。" : "局面更新后显示。";
+      entries.push(item);
+    }
+    risks.replaceChildren(...entries);
+  }
+
+  function renderSandbox() {
+    if (!sandbox) return;
+    const node = sandbox.current;
+    const legal = engine.legalMoves(node.board, node.side);
+    const repeated = sandbox.visits()[engine.positionKey(node.board, node.side)] >= 3;
+    byId("sandbox-state").textContent = "已推演 " + node.depth + " 步";
+    byId("sandbox-summary").textContent = !legal.length ? sideName(node.side) + (engine.inCheck(node.board, node.side) ? "被将死。" : "困毙。") + "可后退选择其他分支。" : repeated ? "该局面已出现三次，可后退选择其他分支。" : sideName(node.side) + "走棋。原对局已暂停。";
+    byId("sandbox-back").disabled = !node.parent;
+    byId("sandbox-board-back").disabled = !node.parent;
+    byId("sandbox-board-turn").textContent = "沙盘推演 · " + sideName(node.side) + "走棋 · 已试走 " + node.depth + " 步";
+    byId("sandbox-forward").disabled = !node.children.length;
+    byId("sandbox-reset").disabled = node === sandbox.root;
+    byId("sandbox-reply").disabled = !legal.length || repeated || !coachingReport()?.move;
+    byId("sandbox-path").replaceChildren(...sandbox.path().map(entry => {
+      const item = document.createElement("li");
+      const button = uiButton(entry.depth ? entry.depth + ". " + entry.label : entry.label, () => { sandbox.current = entry; updateSandbox(); });
+      if (entry === node) button.setAttribute("aria-current", "step");
+      item.append(button);
+      return item;
+    }));
+    byId("sandbox-branches").replaceChildren(...node.children.map((entry, index) => uiButton("分支 " + (index + 1) + "：" + entry.label, () => { sandbox.forward(index); updateSandbox(); })));
+  }
+
+  function updateSandbox() {
+    clearSelection();
+    syncTraining();
+    renderSandbox();
+    renderPractice();
+    renderStatus();
+    renderBoard();
+  }
+
+  function selectSandboxSquare(square) {
+    const node = sandbox.current;
+    const move = targets.find(move => move.to === square);
+    if (move) {
+      sandbox.play(move);
+      updateSandbox();
+      return;
+    }
+    clearSelection();
+    if (node.board[square] * node.side > 0) {
+      selected = square;
+      targets = engine.legalMoves(node.board, node.side, square);
+    }
+    renderBoard();
+  }
+
+  byId("coach-hint").addEventListener("click", () => {
+    if (!coachingReport()?.move) return;
+    coachPreview = !coachPreview;
+    riskPreview = null;
+    renderTraining();
+    drawGuides();
+  });
+  byId("sandbox-enter").addEventListener("click", () => {
+    if (!started || mode === "challenge" || sandbox || engine.kingOnIsland(board, BLACK)) return;
+    stopComputer();
+    clearPlayback();
+    sandbox = new training.Sandbox(board, turn);
+    updateSandbox();
+  });
+  byId("sandbox-exit").addEventListener("click", () => {
+    if (!sandbox) return;
+    sandbox = null;
+    stopCoach();
+    coaching = null;
+    clearSelection();
+    syncTraining();
+    renderBoard();
+    renderStatus();
+    renderPractice();
+    advanceGame();
+  });
+  byId("sandbox-back").addEventListener("click", () => { if (sandbox) { sandbox.back(); updateSandbox(); } });
+  byId("sandbox-forward").addEventListener("click", () => { if (sandbox) { sandbox.forward(); updateSandbox(); } });
+  byId("sandbox-reset").addEventListener("click", () => { if (sandbox) { sandbox.reset(); updateSandbox(); } });
+  byId("sandbox-reply").addEventListener("click", () => {
+    const move = coachingReport()?.move;
+    if (sandbox && move) { sandbox.play(move); updateSandbox(); }
+  });
+  byId("sandbox-board-back").addEventListener("click", () => byId("sandbox-back").click());
+  byId("sandbox-board-exit").addEventListener("click", () => byId("sandbox-exit").click());
+
   function closeBoardGuide() {
+    coachPreview = false;
+    riskPreview = null;
     if (draftPreview) returnToDraft();
     else if (sweepSelection) cancelSweep();
     else {
@@ -1727,6 +1972,7 @@
     if (canPass && !result) recordTurn({ label: "待机" });
   });
   convertButton.addEventListener("click", () => {
+    if (sandbox) return;
     if (mode !== "casual" || turn !== humanSide || result) return;
     const wasActive = conversionSquares !== null;
     clearSelection();
@@ -1735,6 +1981,7 @@
     renderStatus();
   });
   function openSetup() {
+    if (sandbox) return;
     byId("restart-title").textContent = started ? "重新开局" : "开始对局";
     restartCancel.hidden = !started;
     restartWarning.hidden = history.length === 0;
@@ -1802,4 +2049,5 @@
   });
   newGame(false);
   openSetup();
+  window.dispatchEvent(new Event("blog:page-ready"));
 })();

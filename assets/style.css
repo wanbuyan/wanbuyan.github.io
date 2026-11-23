@@ -2,6 +2,58 @@
 @import url("./tokens.css");
 @import url("./base.css");
 
+.home-posts { margin-top: calc(var(--space) * 8); }
+.home-post-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 24px; }
+.post-card { padding: 32px; background: #fff; border-radius: var(--radius); }
+.post-meta { display: flex; flex-wrap: wrap; gap: 16px; color: var(--color-muted); font-size: 14px; }
+.post-meta span { color: var(--color-accent); }
+.post-card h2, .post-card h3 { font-size: 23px; line-height: 1.5; margin: 16px 0 8px; }
+.post-card h2 a:hover, .post-card h3 a:hover { color: var(--color-accent); }
+.post-card > p { color: var(--color-muted); font-size: 16px; line-height: 1.8; }
+.post-card > .text-link { margin-top: 16px; }
+.posts-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 32px; }
+.posts-toolbar .search-field { flex: 1; min-width: 200px; }
+.posts-toolbar select, .editor-select select { padding: 12px 36px 12px 16px; border: 1px solid var(--color-field-border); border-radius: 8px; background: #fff; color: var(--color-ink); font: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666a5e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E"); background-size: 18px; background-repeat: no-repeat; background-position: right 12px center; }
+#post-count { color: var(--color-muted); font-size: 14px; }
+.post-list { display: grid; gap: 24px; }
+.post-empty { text-align: center; padding: 64px 24px; background: white; border-radius: var(--radius); }
+.post-reader { max-width: 800px; margin-inline: auto; padding: 40px 48px; background: #fff; border-radius: var(--radius); }
+.post-reader-header { padding-block: 32px; border-bottom: 1px solid var(--color-rule); margin-bottom: 32px; }
+.post-reader h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.45; margin-top: 16px; }
+.post-content { overflow-wrap: anywhere; line-height: 1.95; font-size: 17px; }
+.post-content h2 { font-size: 26px; margin: 40px 0 16px; }
+.post-content h3 { font-size: 22px; margin: 32px 0 16px; }
+.post-content h4 { font-size: 19px; margin: 24px 0 16px; }
+.post-content p, .post-content ul, .post-content ol, .post-content blockquote, .post-content pre { margin: 0 0 24px; }
+.post-content ul, .post-content ol { padding-left: 28px; }
+.post-content li { margin-block: 8px; }
+.post-content p { white-space: pre-line; }
+.post-content a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+.post-content img { display: block; max-width: 100%; height: auto; margin: 24px auto; border-radius: 8px; }
+.post-content blockquote { padding: 16px 24px; border-left: 3px solid var(--color-accent); background: var(--color-accent-soft); }
+.post-content pre { padding: 24px; background: #f4f4f1; border-radius: 8px; overflow: auto; white-space: pre; }
+.post-content code { font-size: .9em; font-family: Consolas, monospace; background: #f4f4f1; padding: 2px 4px; }
+.post-content pre code { padding: 0; }
+.editor-main { padding-bottom: 64px; }
+.editor-select { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 24px; }
+.editor-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+.editor-form { display: grid; gap: 16px; min-width: 0; }
+.editor-form label { display: grid; gap: 8px; font-size: 15px; }
+.editor-form input:not([type="checkbox"]), .editor-form textarea { width: 100%; padding: 12px; border: 1px solid var(--color-field-border); background: #fff; color: var(--color-ink); border-radius: 8px; font: inherit; min-width: 0; }
+.editor-form textarea { resize: vertical; line-height: 1.8; }
+.editor-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.editor-form .editor-draft { display: flex; align-items: center; gap: 8px; }
+.editor-footer { display: flex; flex-wrap: wrap; gap: 16px; }
+.editor-help { color: var(--color-muted); font-size: 14px; line-height: 1.8; }
+.editor-preview { width: 100%; padding: 32px; }
+@media (max-width: 767px) {
+  .post-reader { padding: 24px; }
+  .post-card { padding: 24px; }
+  .editor-layout { grid-template-columns: 1fr; }
+  .editor-field-row { grid-template-columns: 1fr; }
+  .posts-toolbar .search-field { flex-basis: 100%; }
+}
+
 @font-face {
   font-family: "Blog Sans";
   src: url("./fonts/blog-sans.woff2") format("woff2");
@@ -70,7 +122,7 @@ main { flex: 1; }
 .section-heading p { font-size: 14px; color: var(--color-muted); margin-top: var(--space); }
 .game-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--gap-columns); }
 .game-card { min-width: 0; background: var(--color-white); border-radius: var(--radius); overflow: clip; }
-.game-picture { display: block; margin: calc(var(--space) * 2) calc(var(--space) * 2) 0; overflow: clip; background: var(--color-image-paper); border-radius: var(--radius-control); aspect-ratio: 1.95; }
+.game-picture { display: block; margin: calc(var(--space) * 2) calc(var(--space) * 2) 0; overflow: clip; background: var(--color-image-paper); border-radius: var(--radius-control); aspect-ratio: 24 / 13; }
 .game-picture img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .game-caption { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--space) * 2); padding: calc(var(--space) * 3); }
 .game-caption h2, .game-caption h3 { font-size: 24px; font-weight: 600; }
@@ -89,7 +141,7 @@ main { flex: 1; }
 .games-intro { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--space) * 3); }
 .quiet-status { display: inline-flex; align-items: center; gap: var(--space); color: var(--color-mint-ink); background: var(--color-mint); padding: var(--space) calc(var(--space) * 2); font-size: 13px; border-radius: var(--radius-control); white-space: nowrap; }
 .quiet-status .icon { width: 18px; height: 18px; }
-.game-grid-full .game-picture { aspect-ratio: 1.65; }
+.game-grid-full .game-picture { aspect-ratio: 24 / 13; }
 .game-grid-full .game-caption { padding-bottom: calc(var(--space) * 4); }
 .games-note { display: flex; align-items: center; justify-content: center; gap: var(--space); font-size: 13px; color: var(--color-muted); margin-top: calc(var(--space) * 4); }
 .games-note .icon { width: 16px; height: 16px; }

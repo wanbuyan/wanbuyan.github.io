@@ -1029,4 +1029,5 @@
   paintSound();
   sizeBoard();
   requestFrame();
+  window.dispatchEvent(new Event("blog:page-ready"));
 })();

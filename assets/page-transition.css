@@ -1,0 +1,99 @@
+/* 书刊风加载转场；样式只作用于加载层。 */
+html.blog-page-loading { overflow: hidden; background: #f8f7f3; }
+html.blog-page-departing { overflow: hidden; }
+html.blog-page-loading body { visibility: hidden !important; }
+html.blog-page-loading dialog:not(#blog-page-transition),
+html.blog-page-loading dialog:not(#blog-page-transition)::backdrop { visibility: hidden !important; }
+#blog-page-transition {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  outline: 0;
+  overflow: auto;
+  background: #f8f7f3;
+  color: #292a26;
+  font: 400 16px/1.7 "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  opacity: 1;
+  will-change: opacity;
+  transition: opacity 420ms cubic-bezier(.4, 0, .2, 1);
+}
+#blog-page-transition::backdrop { background: transparent; }
+#blog-page-transition.is-departing { opacity: 0; }
+#blog-page-transition > * { opacity: 0; will-change: opacity; }
+#blog-page-transition.is-visible > * { opacity: 1; }
+#blog-page-transition.is-leaving { opacity: 0; pointer-events: none; }
+#blog-page-transition .page-transition-brand {
+  position: absolute;
+  top: max(32px, env(safe-area-inset-top));
+  left: max(40px, env(safe-area-inset-left));
+  color: #292a26;
+  font-size: 20px;
+  font-weight: 500;
+  text-decoration: none;
+}
+#blog-page-transition .page-transition-center {
+  position: absolute;
+  inset: 50% 24px auto;
+  transform: translateY(-50%);
+  text-align: center;
+}
+#blog-page-transition .page-transition-title {
+  margin: 0;
+  color: #292a26;
+  font: 500 clamp(32px, 4vw, 40px)/1.4 "Songti SC", "Noto Serif SC", "SimSun", serif;
+  letter-spacing: .04em;
+}
+#blog-page-transition .page-transition-status { margin: 20px 0 0; color: #666a5e; font-size: 16px; }
+#blog-page-transition .page-transition-dots { display: flex; justify-content: center; gap: 12px; margin-top: 28px; height: 16px; align-items: center; }
+#blog-page-transition .page-transition-dots span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a93627;
+  animation: page-transition-dot 1100ms ease-in-out infinite;
+}
+#blog-page-transition .page-transition-dots span:nth-child(2) { animation-delay: 140ms; }
+#blog-page-transition .page-transition-dots span:nth-child(3) { animation-delay: 280ms; }
+#blog-page-transition .page-transition-return {
+  position: absolute;
+  bottom: max(32px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #666a5e;
+  font-size: 15px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#blog-page-transition a:hover { color: #a93627; }
+#blog-page-transition a:focus-visible, #blog-page-transition button:focus-visible { outline: 2px solid #a93627; outline-offset: 5px; }
+#blog-page-transition .page-transition-retry { margin-top: 24px; padding: 8px 20px; border: 1px solid #bcbdb5; border-radius: 6px; background: transparent; color: #292a26; cursor: pointer; font: inherit; }
+#blog-page-transition .page-transition-retry:hover { border-color: #a93627; color: #a93627; }
+#blog-page-transition [hidden] { display: none !important; }
+#blog-page-transition.has-error .page-transition-dots { display: none; }
+@keyframes page-transition-dot {
+  0%, 70%, 100% { opacity: .4; transform: translateY(0); }
+  35% { opacity: 1; transform: translateY(-5px); }
+}
+@keyframes page-transition-pulse {
+  0%, 70%, 100% { opacity: .35; }
+  35% { opacity: 1; }
+}
+@media (max-width: 600px) {
+  #blog-page-transition .page-transition-brand { top: max(20px, env(safe-area-inset-top)); left: max(24px, env(safe-area-inset-left)); font-size: 18px; }
+  #blog-page-transition .page-transition-return { bottom: max(24px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #blog-page-transition .page-transition-dots span { animation-name: page-transition-pulse; }
+}

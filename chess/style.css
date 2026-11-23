@@ -1,5 +1,37 @@
-/* Hallmark · v2.0.0 · shape: app screen · genre: playful · theme: Werkstatt (putty) · signature: 朱红与墨黑棋子落在楚河棋盘的交叉点 */
+/* 中国象棋：棋盘、练习指导和独立推演。 */
 /* critique: Leave the board dominant and align the controls and move record on one quiet rail. */
+.record.training-panel, .record.sandbox-panel { padding: 1.25rem; max-height: none; overflow: visible; }
+.training-panel .record-heading, .sandbox-panel .record-heading { padding: 0; margin-bottom: .75rem; }
+.training-panel > p, .sandbox-panel > p { line-height: 1.8; }
+.training-panel h3 { font-size: .95rem; margin: 1.25rem 0 .5rem; }
+.training-actions { margin-top: 1rem; }
+.training-note { font-size: .8rem; color: var(--muted); margin: .75rem 0; }
+.training-risks { list-style: none; padding: 0; margin: 0; }
+.training-risks li { padding: .75rem 0; border-bottom: 1px solid var(--rule); }
+.training-risks li:last-child { border: 0; }
+.training-risks p { margin-top: .5rem; font-size: .875rem; color: var(--muted); }
+.training-risks .action { text-align: left; min-height: 2.25rem; padding: .3rem .6rem; }
+.training-risks [data-severity="hanging"] .action { color: #98400c; border-color: #ba682e; }
+.intersection[data-risk] .stone { outline: 3px solid #b45e19; outline-offset: 2px; }
+.intersection[data-guarded-risk] .stone { outline: 2px dashed #8e5b2a; outline-offset: 2px; }
+#board .intersection[data-risk-target]::after { content: "!"; position: absolute; inset: auto 2% 2% auto; display: grid; place-items: center; width: 1.1rem; height: 1.1rem; border: 1px solid #fff; border-radius: 50%; background: #8e3d0e; color: #fff; font: 700 .8rem/1 var(--sans); z-index: 2; }
+.sandbox-board-bar { padding: .75rem; background: #e4eee7; border-left: 3px solid #356b63; }
+.sandbox-board-bar p { margin-bottom: .5rem; color: #294f47; font-size: .9rem; }
+.sandbox-board-bar .action { min-height: 2.25rem; padding: .3rem .8rem; }
+.sandbox-panel { border-top: 3px solid #356b63; }
+.sandbox-start { width: 100%; margin-top: 1rem; }
+.sandbox-navigation { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 1rem; }
+.sandbox-navigation .action { padding-inline: .5rem; }
+.sandbox-path { display: flex; gap: .4rem; flex-wrap: wrap; list-style: none; padding: 0; max-height: 12rem; overflow-y: auto; margin: 1rem 0; }
+.sandbox-path .action { font-size: .8rem; padding: .3rem .5rem; min-height: 2rem; }
+.sandbox-path [aria-current] { background: #356b63; color: white; }
+.sandbox-branches { display: grid; gap: .5rem; margin: 1rem 0; }
+.sandbox-branches:empty { display: none; }
+#sandbox-exit { width: 100%; }
+.is-sandbox .board-frame { outline: 3px solid #356b63; outline-offset: 5px; }
+.is-sandbox .player-captures { visibility: hidden; }
+.action:disabled { opacity: .5; cursor: default; }
+@media (max-width: 600px) { .record.training-panel, .record.sandbox-panel { padding: 1rem; } }
 :root {
   color-scheme: light;
   --paper: #f3eee3;
