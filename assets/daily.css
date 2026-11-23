@@ -1,0 +1,60 @@
+/* 每日摘选与紧凑的主页内容区。 */
+.artwork-relation { flex-basis: 100%; font-size: 12px; line-height: 1.7; color: var(--color-muted); }
+.daily-quote { margin: 0; padding: 48px 32px 40px; text-align: center; }
+.daily-quote blockquote { margin: 0 auto; max-width: 920px; }
+.daily-quote blockquote p { color: var(--color-ink); font: 400 clamp(20px, 2.2vw, 28px)/1.85 "Songti SC", "Noto Serif SC", "SimSun", serif; letter-spacing: .025em; overflow-wrap: anywhere; white-space: pre-line; }
+.daily-quote figcaption { margin-top: 24px; color: var(--color-muted); font-size: 14px; letter-spacing: .12em; line-height: 1.8; }
+.daily-quote figcaption > span:first-child { margin-right: 10px; }
+.home-content-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 32px; align-items: start; margin-top: 48px; }
+.home-content-grid > .home-posts, .home-content-grid > .home-games { margin-top: 0; min-width: 0; }
+.home-content-grid .section-heading { margin-bottom: 20px; gap: 16px; }
+.home-content-grid .section-heading h2 { font-size: 24px; }
+.home-content-grid .section-heading p { display: none; }
+.home-posts .home-post-list { display: block; }
+.home-posts .post-card { padding: 24px 32px; }
+.home-posts .post-card + .post-card { margin-top: 16px; }
+.home-posts .post-card h3 { font-size: 21px; }
+.home-games .game-grid { grid-template-columns: 1fr; gap: 16px; }
+.home-games .game-card { display: flex; align-items: center; padding: 16px; gap: 16px; }
+.home-games .game-picture { width: 96px; height: 72px; margin: 0; flex: 0 0 auto; aspect-ratio: auto; }
+.home-games .game-picture img { object-fit: cover; object-position: right center; }
+.game-grid-full .game-picture img { object-position: right center; }
+.home-games .game-caption { padding: 0; gap: 12px; flex: 1; min-width: 0; }
+.home-games .game-caption > div { min-width: 0; }
+.home-games .game-caption h3 { font-size: 19px; }
+.home-games .game-caption p { margin-top: 4px; font-size: 13px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.home-games .game-caption > a { padding-inline: 10px; min-height: 36px; font-size: 13px; }
+.game-grid-full .game-card { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(0, 1.2fr); align-items: center; padding: 16px; gap: 20px; }
+.game-grid-full .game-picture { margin: 0; height: 128px; aspect-ratio: auto; }
+.game-grid-full .game-caption { display: block; padding: 0; }
+.game-grid-full .game-caption h2 { font-size: 22px; }
+.game-grid-full .game-caption p { font-size: 14px; }
+.game-grid-full .game-caption > a { margin-top: 12px; }
+.local-quote-tools { padding-block: 16px 24px; color: var(--color-muted); font-size: 14px; }
+.local-quote-tools summary { cursor: pointer; width: fit-content; min-height: 32px; }
+.local-quote-tools > div { max-width: 720px; padding-block: 16px; }
+.local-quote-tools p { margin-bottom: 12px; line-height: 1.8; }
+.local-quote-tools input { max-width: 100%; }
+.local-quote-tools [role="status"] { margin-top: 12px; }
+@media (max-width: 1000px) {
+  .home-content-grid { grid-template-columns: 1fr; gap: 32px; }
+  .home-games .game-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-games .game-caption { flex-wrap: wrap; }
+  .game-grid-full { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .hero-art .art-pages { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .hero-art .art-page { padding: 6px; }
+  .hero-art .art-page img { height: 180px; }
+  .daily-quote { padding: 32px 8px; }
+  .daily-quote blockquote p { font-size: 21px; line-height: 1.85; }
+  .daily-quote figcaption { font-size: 13px; margin-top: 20px; }
+  .home-content-grid { margin-top: 32px; }
+  .home-posts .post-card { padding: 24px; }
+  .home-games .game-grid { grid-template-columns: 1fr; }
+  .home-games .game-picture { width: 80px; height: 64px; }
+  .home-games .game-card { gap: 12px; }
+  .home-games .game-caption { flex-wrap: nowrap; }
+  .game-grid-full .game-card { grid-template-columns: 100px minmax(0, 1fr); gap: 16px; }
+  .game-grid-full .game-picture { height: 100px; }
+}

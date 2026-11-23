@@ -5,13 +5,6 @@
  * size 单位为字节，可以省略；type 可选 document、code、image、other，默认按后缀分类。
  */
 window.BLOG_RESOURCES = [
-  {
-    name: "DC-2靶场全流程——万不言.docx",
-    path: "DC-2靶场全流程——万不言.docx",
-    type: "document",
-    size: 3858572,
-    description: "DC-2 靶场全流程文档。"
-  },
   ...(window.BLOG_ARTWORKS || []).map(artwork => ({
     name: artwork.fileName,
     path: artwork.path,

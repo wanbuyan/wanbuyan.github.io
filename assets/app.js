@@ -1,35 +1,7 @@
 "use strict";
 
-const heroArtworks = Array.isArray(window.BLOG_ARTWORKS) ? window.BLOG_ARTWORKS : [];
-
-function randomizeHeroArtworks({ excludeCurrent = false } = {}) {
-  const cards = [...document.querySelectorAll(".hero-art .art-page")];
-  const currentIds = new Set(cards.map(card => Number(card.dataset.artworkId)));
-  const available = excludeCurrent ? heroArtworks.filter(artwork => !currentIds.has(artwork.id)) : heroArtworks;
-  const shuffled = [...(available.length >= cards.length ? available : heroArtworks)];
-  for (let index = shuffled.length - 1; index > 0; index--) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
-  }
-  cards.forEach((page, index) => {
-    const artwork = shuffled[index];
-    if (!artwork) return;
-    const img = page.querySelector("img");
-    img.src = artwork.src;
-    img.width = artwork.width;
-    img.height = artwork.height;
-    img.alt = `戴敦邦绘：${artwork.character}`;
-    page.dataset.artworkId = artwork.id;
-    page.querySelector(".art-name").textContent = artwork.character;
-    page.querySelector(".art-description").textContent = artwork.description;
-  });
-  document.querySelector("#inscription-note").hidden = !shuffled.slice(0, cards.length).some(artwork => artwork.description.includes("〔未辨〕"));
-}
-randomizeHeroArtworks();
-document.querySelector("#refresh-artworks").addEventListener("click", () => randomizeHeroArtworks({ excludeCurrent: true }));
-
 const games = [
-  { name: "象棋", href: "chess/index.html", image: "assets/images/chess-cover.svg", key: "chess", description: "人机对弈、练习指导与沙盘推演", tags: ["人机对弈", "练习指导", "沙盘推演"] },
+  { name: "象棋", href: "chess/index.html", image: "assets/images/chess-cover.svg", key: "chess", description: "盲棋、技能挑战、练习与沙盘推演", tags: ["盲棋", "练习指导", "沙盘推演"] },
   { name: "贪吃蛇", href: "gameGPT/neon-serpent/dist/index.html", image: "assets/images/snake-cover.svg", key: "snake", description: "随机强化、连击冲刺与触屏操作", tags: ["随机强化", "连击冲刺", "触屏可玩"] }
 ];
 

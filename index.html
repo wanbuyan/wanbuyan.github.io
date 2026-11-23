@@ -8,14 +8,19 @@
   <title>万不言的博客</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="assets/style.css">
+  <link rel="stylesheet" href="assets/daily.css?v=20261123-2">
   <link rel="stylesheet" href="assets/page-transition.css?v=20261123-5">
   <script src="assets/page-transition.js?v=20261123-5" data-mode="navigation"></script>
   <script src="assets/artworks.js" defer></script>
-  <script src="assets/resources.js?v=20261123-dc2" defer></script>
-  <script src="posts/posts.js" defer></script>
+  <script src="assets/artwork-relations.js?v=20261123-1" defer></script>
+  <script src="assets/daily-core.js?v=20261123-hourly1" defer></script>
+  <script src="assets/quotes-xlsx.js?v=20261123-1" defer></script>
+  <script src="assets/daily-ui.js?v=20261123-hourly1" defer></script>
+  <script src="assets/resources.js?v=20261123-dc2-post" defer></script>
+  <script src="posts/posts.js?v=20261123-dc2" defer></script>
   <script src="assets/posts-core.js" defer></script>
   <script src="assets/posts-ui.js" defer></script>
-  <script src="assets/app.js?v=20261123-5" defer></script>
+  <script src="assets/app.js?v=20261123-7" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
@@ -54,20 +59,26 @@
         </div>
         <figure class="hero-art" aria-labelledby="hero-art-caption">
           <div class="art-pages" id="hero-art-pages" aria-live="polite" aria-atomic="true"><div class="art-page"><img src="资料/水浒人物/宋江-02.jpeg" width="640" height="870" alt="戴敦邦绘水浒人物宋江" fetchpriority="high"><span class="art-name">宋江</span><p class="art-description">及时雨宋江。见《水浒传》第十八回，郓城押司之宋公明，后为梁山第一寨主，终招安。〔未辨〕乙亥春，戴敦邦作造型图。</p></div><div class="art-page"><img src="资料/水浒人物/公孙胜-01.jpeg" width="640" height="869" alt="戴敦邦绘水浒人物公孙胜" fetchpriority="high"><span class="art-name">公孙胜</span><p class="art-description">公孙胜。见《水浒传》第五十四回，入云龙斗法破高廉。若此情节删本中删去亦可；〔未辨〕公孙先生梁山入伙后，常代法祭祀。乙亥，戴敦邦作《水》剧人物造型。</p></div></div>
-          <figcaption id="hero-art-caption"><span>戴敦邦《水浒人物》</span><div class="art-caption-actions"><a href="https://www.sohu.com/a/449542309_523187" target="_blank" rel="noopener noreferrer">插图来源<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a><button class="button secondary art-refresh" id="refresh-artworks" type="button" aria-controls="hero-art-pages"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg>换一组</button></div><p class="inscription-note" id="inscription-note" hidden>〔未辨〕表示原图中尚未确认的字句。</p></figcaption>
+          <figcaption id="hero-art-caption"><span>戴敦邦《水浒人物》 · 每小时更新</span><div class="art-caption-actions"><a href="https://www.sohu.com/a/449542309_523187" target="_blank" rel="noopener noreferrer">插图来源<svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a></div><p class="artwork-relation" id="artwork-relation" hidden></p><p class="inscription-note" id="inscription-note" hidden>〔未辨〕表示原图中尚未确认的字句。</p></figcaption>
         </figure>
       </section>
+
+      <figure class="daily-quote" id="daily-quote" aria-label="金句摘选">
+        <blockquote><p id="daily-quote-content">昨夜西风凋碧树，独上高楼，望尽天涯路。</p></blockquote>
+        <figcaption id="daily-quote-attribution"><span>摘自 ·</span><span id="daily-quote-source">晏殊《蝶恋花》</span></figcaption>
+      </figure>
 
       <section class="resource-overview" aria-labelledby="overview-title">
         <div class="overview-copy"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg><div><h2 id="overview-title">资料仓库</h2><p>文档、代码与图片</p></div></div><div class="overview-action"><span data-resource-count>正在读取</span><a href="#resources" class="text-link">查看资料</a></div>
       </section>
 
-      <section class="home-games" aria-labelledby="home-games-title">
-        <div class="section-heading"><div><h2 id="home-games-title">自制游戏</h2><p>象棋与贪吃蛇</p></div><a class="text-link" href="#games">全部游戏</a></div>
-        <div class="game-grid" data-game-list="home"></div>
-      </section>
-
-      <section class="home-posts" aria-labelledby="home-posts-title"><div class="section-heading"><div><h2 id="home-posts-title">最新帖子</h2></div><a class="text-link" href="#posts">全部帖子</a></div><div id="home-post-list" class="home-post-list"></div></section>
+      <div class="home-content-grid">
+        <section class="home-posts" aria-labelledby="home-posts-title"><div class="section-heading"><div><h2 id="home-posts-title">最新帖子</h2></div><a class="text-link" href="#posts">全部帖子</a></div><div id="home-post-list" class="home-post-list"></div></section>
+        <section class="home-games" aria-labelledby="home-games-title">
+          <div class="section-heading"><div><h2 id="home-games-title">自制游戏</h2></div><a class="text-link" href="#games">全部游戏</a></div>
+          <div class="game-grid" data-game-list="home"></div>
+        </section>
+      </div>
       <section class="future-section" aria-labelledby="future-title"><h2 id="future-title">其他栏目</h2><div class="pending-links"><a href="#notes">随笔<span>待开发</span></a><a href="#about">关于<span>待开发</span></a></div></section>
     </div>
 
@@ -107,5 +118,6 @@
     </div>
   </main>
   <footer class="site-footer container"><a href="#home" class="footer-name">万不言的博客</a><a class="art-credit" href="https://www.sohu.com/a/449542309_523187" target="_blank" rel="noopener noreferrer">插图：戴敦邦《水浒人物》</a><span>© 2026 万不言</span></footer>
+  <details class="local-quote-tools container" id="local-quote-tools" hidden><summary>本地金句预览</summary><div><p>选择修改后的 Excel 预览金句；上线时只需替换“金句/金句.xlsx”。</p><input id="local-quote-file" type="file" accept=".xlsx" aria-label="选择金句 Excel"><p id="local-quote-status" role="status">尚未导入本地表格，当前展示演示金句。</p><a class="text-link" href="金句/金句.xlsx" download>下载金句 Excel</a></div></details>
 </body>
 </html>

@@ -4,10 +4,12 @@ const path = require('node:path');
 const os = require('node:os');
 const { spawn } = require('node:child_process');
 const { pathToFileURL } = require('node:url');
+const http = require('node:http');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 let chrome;
+let quoteServer;
 async function main() {
   const temp = await fs.mkdtemp(path.join(os.tmpdir(), 'wanbuyan-browser-'));
   const shots = path.join(root, '.design', 'qa');
@@ -50,28 +52,125 @@ async function main() {
     await click('#board .intersection:nth-child(' + (a + 1) + ')');
     await click('#board .intersection:nth-child(' + (b + 1) + ')');
   };
-  async function openGame(mode, side = 'red') {
+  async function openGame(mode, side = 'red', fixture = null) {
     await navigate('chess/index.html');
     await wait('!document.querySelector("#blog-page-transition")', 'loading transition finished');
     await wait('document.querySelector("#restart-dialog").open', 'opening dialog');
+    if (fixture) await evaluate('window.__blindFixture = ' + JSON.stringify(fixture));
     await click(`input[name="opening-mode"][value="${mode}"]`);
     await click(`input[name="opening-side"][value="${side}"]`);
     await click('#restart-dialog button[value="restart"]');
     await evaluate('document.querySelector("#piece-motion").checked = false; document.querySelector("#piece-sound").checked = false;');
     await wait('!document.querySelector("#restart-dialog").open', 'game started');
-    const label = { practice: '练习模式', casual: '娱乐对局', challenge: '挑战模式' }[mode];
+    const label = { practice: '练习模式', casual: '娱乐对局', challenge: '挑战模式', blind: '盲棋模式' }[mode];
     await wait('document.querySelector("#mode-label").textContent === ' + JSON.stringify(label) + ' && document.querySelector("#status-title").textContent !== "选择开局"', 'mode initialized');
   }
   await send('Page.enable'); await send('Runtime.enable');
+  const blindOnly = process.argv.includes('--blind-only');
+  if (!blindOnly) {
   await viewport(1440, 1100);
   await navigate('index.html');
   await wait('document.querySelectorAll(".game-card").length === 4', 'game cards');
   await evaluate('document.querySelectorAll(".game-picture img").forEach(img => img.loading = "eager")');
   await wait('Array.from(document.querySelectorAll(".game-picture img")).every(img => img.complete && img.naturalWidth > 0 && img.src.endsWith("-cover.svg"))', 'new SVG covers load');
-  assert.equal(await evaluate('document.querySelectorAll("#home-post-list .post-card").length'), 1);
+  assert.equal(await evaluate('document.querySelectorAll("#home-post-list .post-card").length'), 2);
   assert.equal(await evaluate('document.querySelector("#prank-link")'), null);
   assert.equal(await evaluate('window.BLOG_ARTWORKS.length'), 181);
+  assert.equal(await evaluate('document.querySelector("#refresh-artworks")'), null);
+  assert.equal(await evaluate('document.querySelector("#daily-quote-content").textContent'), '昨夜西风凋碧树，独上高楼，望尽天涯路。');
+  assert.equal(await evaluate('document.querySelector("#daily-quote-source").textContent'), '晏殊《蝶恋花》');
+  const initialArt = await evaluate('[...document.querySelectorAll(".art-page")].map(card => card.dataset.artworkId)');
+  assert.equal(await evaluate('document.querySelector("#artwork-relation").textContent === BlogDaily.pickArtworks(BLOG_ARTWORKS,BLOG_ARTWORK_RELATIONS,BlogDaily.hourIndex()).relation'),true);
+  assert.equal(await evaluate('document.querySelector("#artwork-relation").hidden'),false);
+  await wait('[...document.querySelectorAll(".art-page img")].every(img=>img.complete && img.naturalWidth>0)','daily related portraits load');
+  await navigate('index.html');
+  assert.deepEqual(await evaluate('[...document.querySelectorAll(".art-page")].map(card => card.dataset.artworkId)'), initialArt);
+  await evaluate('window.__realDateNow = Date.now; window.__qaBaseTime = Date.parse(BlogDaily.dateKey()+"T10:59:59+08:00"); Date.now = () => window.__qaBaseTime; document.dispatchEvent(new Event("visibilitychange"))');
+  const artBeforeHour = await evaluate('[...document.querySelectorAll(".art-page")].map(card => card.dataset.artworkId)');
+  const quoteBeforeHour = await evaluate('({ date: document.querySelector("#daily-quote").dataset.date, content: document.querySelector("#daily-quote-content").textContent })');
+  await evaluate('Date.now = () => window.__qaBaseTime + 2000; document.dispatchEvent(new Event("visibilitychange"))');
+  assert.notDeepEqual(await evaluate('[...document.querySelectorAll(".art-page")].map(card => card.dataset.artworkId)'), artBeforeHour);
+  assert.deepEqual(await evaluate('({ date: document.querySelector("#daily-quote").dataset.date, content: document.querySelector("#daily-quote-content").textContent })'),quoteBeforeHour);
+  assert.match(await evaluate('document.querySelector("#hero-art-pages").dataset.hour'),/T11$/);
+  await evaluate('Date.now = () => window.__qaBaseTime + 14*3600000 + 2000; document.dispatchEvent(new Event("visibilitychange"))');
+  assert.notEqual(await evaluate('document.querySelector("#daily-quote").dataset.date'),quoteBeforeHour.date);
+  await evaluate('Date.now = window.__realDateNow; document.dispatchEvent(new Event("visibilitychange"))');
+  assert.deepEqual(await evaluate('[...document.querySelectorAll(".art-page")].map(card => card.dataset.artworkId)'), initialArt);
+  assert.ok(await evaluate('document.querySelector(".home-games").getBoundingClientRect().height < 360'));
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".home-content-grid")).gridTemplateColumns.split(" ").length'), 2);
   await screenshot('blog-desktop');
+  await evaluate('document.querySelector(".home-content-grid").scrollIntoView({block:"center",behavior:"instant"})');
+  await screenshot('blog-compact-content');
+  await viewport(390,844);
+  await evaluate('window.scrollTo(0,0)');
+  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'), true);
+  assert.equal(await evaluate('getComputedStyle(document.querySelector(".home-content-grid")).gridTemplateColumns.split(" ").length'), 1);
+  await screenshot('blog-daily-mobile');
+  await viewport(1440,1100);
+  const fixtureDir = path.join(root, '.design/workbook/outputs/01a1f1c4-67d5-7ab3-8ce9-ece32ba06140');
+  const chooseWorkbook = async file => {
+    const document = await send('DOM.getDocument');
+    const input = await send('DOM.querySelector', { nodeId: document.root.nodeId, selector: '#local-quote-file' });
+    await send('DOM.setFileInputFiles', { nodeId: input.nodeId, files: [file] });
+  };
+  await chooseWorkbook(path.join(fixtureDir, 'append-fixture.xlsx'));
+  await wait('document.querySelector("#local-quote-status").textContent.includes("已导入 2 条")', 'Excel append and inline/shared strings');
+  const importedText = await evaluate('document.querySelector("#daily-quote-content").textContent');
+  await navigate('index.html');
+  assert.equal(await evaluate('document.querySelector("#daily-quote").dataset.input'), 'local');
+  assert.equal(await evaluate('document.querySelector("#daily-quote-content").textContent'), importedText);
+  await chooseWorkbook(path.join(fixtureDir,'invalid-fixture.xlsx'));
+  await wait('document.querySelector("#local-quote-status").textContent.includes("导入失败")', 'invalid Excel header');
+  assert.equal(await evaluate('document.querySelector("#daily-quote-content").textContent'), importedText);
+  await evaluate('localStorage.removeItem("wanbuyan-local-quote-workbook-v1")');
+  let onlineWorkbook = await fs.readFile(path.join(root,'金句/金句.xlsx'));
+  let quoteRequests = 0;
+  quoteServer = http.createServer(async (req,res) => {
+    try {
+      const pathname = decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+      if (pathname === '/金句/金句.xlsx') { quoteRequests++; res.writeHead(200,{'Content-Type':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','Cache-Control':'no-store'}); res.end(onlineWorkbook); return; }
+      const file = path.resolve(root,'.' + (pathname === '/' ? '/index.html' : pathname));
+      if (!file.startsWith(root + path.sep)) { res.writeHead(403); res.end(); return; }
+      const mime = {'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.jpeg':'image/jpeg','.jpg':'image/jpeg','.png':'image/png','.woff2':'font/woff2'};
+      res.writeHead(200, {'Content-Type':mime[path.extname(file)] || 'application/octet-stream','Cache-Control':'no-store'});
+      res.end(await fs.readFile(file));
+    } catch { if (!res.headersSent) res.writeHead(404); res.end(); }
+  });
+  await new Promise(resolve=>quoteServer.listen(0,'127.0.0.1',resolve));
+  const localHttp = 'http://127.0.0.1:' + quoteServer.address().port + '/index.html';
+  const online = async () => { await send('Page.navigate',{url:localHttp}); await wait('document.querySelector("#daily-quote")?.dataset.input === "excel"','online reads Excel directly'); };
+  await online();
+  assert.equal(await evaluate('document.querySelector("#local-quote-tools").hidden'), true);
+  assert.equal(await evaluate('document.querySelector("#daily-quote-content").textContent'), '昨夜西风凋碧树，独上高楼，望尽天涯路。');
+  onlineWorkbook = await fs.readFile(path.join(fixtureDir,'append-fixture.xlsx'));
+  await online();
+  assert.ok(quoteRequests >= 2);
+  const actualRows = await evaluate('fetch("金句/金句.xlsx").then(r=>r.arrayBuffer()).then(b=>QuoteWorkbook.read(b))');
+  assert.equal(actualRows.length,3);
+  const expected = require('../assets/daily-core.js');
+  const today = expected.pick(expected.normalizeQuotes(actualRows),1,expected.dayIndex(),'quotes')[0];
+  assert.equal(await evaluate('document.querySelector("#daily-quote-content").textContent'), today.content);
+  await navigate('index.html');
+  console.log('PASS content schedule: stable hourly related images, independent daily quotes, midnight rollover, compact desktop/mobile layout and Excel import/HTTP updates');
+  await evaluate('location.hash = "posts/dc2-walkthrough"');
+  await wait('document.querySelector("#post-title").textContent === "DC-2靶场全流程——万不言"','DC-2 post route');
+  assert.equal(await evaluate('document.querySelectorAll("#post-content img").length'),15);
+  assert.equal(await evaluate('document.querySelectorAll("#post-content h3").length'),8);
+  assert.equal(await evaluate('BLOG_RESOURCES.some(item=>item.name.includes("DC-2"))'),false);
+  await evaluate('document.querySelectorAll("#post-content img").forEach(img=>img.loading="eager")');
+  await wait('[...document.querySelectorAll("#post-content img")].every(img=>img.complete && img.naturalWidth>0)','all original DC-2 screenshots load');
+  await screenshot('post-dc2-desktop');
+  const attachment = await evaluate(`document.querySelector('#post-content a[href*="posts/files/"]').href`);
+  assert.ok((await fs.stat(require('node:url').fileURLToPath(attachment))).size>3800000);
+  await viewport(390,844);
+  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
+  await screenshot('post-dc2-mobile');
+  await evaluate('document.querySelectorAll("#post-content h3")[6].scrollIntoView({behavior:"instant",block:"start"})');
+  await screenshot('post-dc2-commands-mobile');
+  console.log('PASS DC-2 post: direct route, seven sections, all 14 original images (15 placements), attachment and mobile layout');
+  await viewport(1440,1100);
+  await navigate('index.html');
+  if (process.argv.includes('--daily-only')) { assert.deepEqual(errors,[]); ws.close(); return; }
   await evaluate('location.hash = "games"');
   await wait('!document.querySelector("[data-page=games]").hidden', 'games page');
   await screenshot('games-desktop');
@@ -308,6 +407,129 @@ async function main() {
   assert.equal(await evaluate('document.querySelector("#sandbox-section").hidden'), true);
   assert.equal(await evaluate('document.querySelector("#draft-dialog").open'), true);
   console.log('PASS black-side orientation, mobile chess, casual sandbox isolation and challenge mode unaffected');
+  }
+
+  const blindHook = await send('Page.addScriptToEvaluateOnNewDocument', { source: `
+    let wrappedFactory;
+    Object.defineProperty(window,'createBlindChess',{configurable:true,get(){return wrappedFactory;},set(factory){
+      wrappedFactory = base => {
+        const api = factory(base), createState = api.createState, createEngine = api.createEngine;
+        api.createState = (...args) => {
+          const fixture = window.__blindFixture;
+          const state = fixture?.board ? {hidden:fixture.hidden.slice(),identities:fixture.identities.slice(),remaining:fixture.remaining.slice()} : createState(...args);
+          for(const [where,piece] of Object.entries(fixture?.force || {})) {
+            const square = Number(where), other = state.identities.indexOf(piece);
+            [state.identities[square],state.identities[other]] = [state.identities[other],state.identities[square]];
+          }
+          window.__qaBlindState = state;
+          return state;
+        };
+        api.createEngine = state => {
+          const engine = createEngine(state);
+          if(window.__blindFixture?.board) engine.initialBoard = () => window.__blindFixture.board.slice();
+          return engine;
+        };
+        return api;
+      };
+    }});
+    const NativeWorker = window.Worker;
+    window.__blindMessages = [];
+    window.Worker = class extends NativeWorker {
+      postMessage(data,...rest) { if(data.blind) window.__blindMessages.push(structuredClone(data)); return super.postMessage(data,...rest); }
+    };
+  ` });
+  await viewport(1440,1100);
+  await openGame('blind','red',{force:{54:-5}});
+  assert.equal(await evaluate('document.querySelectorAll("#board [data-blind]").length'),30);
+  assert.equal(await evaluate('document.querySelector("#sandbox-section").hidden'),true);
+  assert.equal(await evaluate('document.querySelector("#blind-panel").hidden'),false);
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(86) .stone").textContent'),'帅');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(5) .stone").textContent'),'将');
+  const blindOpening = await boardState();
+  await click('#board .intersection:nth-child(28)');
+  assert.equal(await evaluate('document.querySelector("#move-count").textContent'),'0 步');
+  assert.equal(await evaluate('document.querySelectorAll("[data-blind-role]").length'),0);
+  assert.equal(await evaluate('getComputedStyle(document.querySelector("#board [data-blind] .stone"),"::after").content'),'none');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(55)").getAttribute("aria-label").includes("车")'),false);
+  await screenshot('chess-blind-desktop');
+  await evaluate('document.querySelector("#piece-motion").checked = true');
+  await move(54,45);
+  assert.equal(await evaluate('document.querySelector("#board-motion [data-blind] .stone")?.textContent'),'暗');
+  await wait('document.querySelector("#board-motion").children.length === 0','blind piece flips on landing');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(46) .stone").textContent'),'车');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(46)").hasAttribute("data-red")'),false);
+  await click('#undo');
+  assert.deepEqual(await boardState(),blindOpening);
+  assert.equal(await evaluate('window.__qaBlindState.identities[54]'),-5);
+  await evaluate('document.querySelector("#piece-motion").checked = false');
+  await move(54,45);
+  await wait('document.querySelector("#move-count").textContent === "2 步"','blind AI worker reply');
+  assert.equal(await evaluate('window.__blindMessages.length > 0'),true);
+  assert.deepEqual(await evaluate('Object.keys(window.__blindMessages[0].blind)'),['hidden','remaining']);
+  assert.equal(await evaluate('window.__blindMessages[0].blind.remaining.every((value,i,list)=>i===0||list[i-1]<=value)'),true);
+  assert.match(await evaluate('document.querySelector("#move-list").textContent'),/卧底/);
+  await viewport(390,844);
+  await openGame('blind','black');
+  await wait('document.querySelector("#move-count").textContent === "1 步"','blind black-side computer opening');
+  assert.equal(await evaluate('document.documentElement.scrollWidth <= innerWidth'),true);
+  await screenshot('chess-blind-mobile');
+  function blindFixture(pieces,secrets={}) {
+    const board=Array(90).fill(0);board[4]=-1;board[85]=1;
+    for(const [square,piece]of Object.entries(pieces))board[square]=piece;
+    const hidden=Array(90).fill(false),identities=Array(90).fill(0);
+    for(const [square,piece]of Object.entries(secrets)){hidden[square]=true;identities[square]=piece;}
+    return {board,hidden,identities,remaining:Object.values(secrets).sort((a,b)=>a-b)};
+  }
+  await viewport(1440,1100);
+  await openGame('blind','red',blindFixture({36:5,27:-7},{27:-4}));
+  await evaluate('document.querySelector("#piece-motion").checked = true');
+  await move(36,27);
+  assert.equal(await evaluate('document.querySelector("#board-motion [data-capture-back] .stone")?.textContent'),'暗');
+  assert.equal(await evaluate('Number(getComputedStyle(document.querySelector("[data-capture-reveal]")).opacity)'),0);
+  await wait('document.querySelector("[data-capture-reveal]") && Number(getComputedStyle(document.querySelector("[data-capture-reveal]")).opacity) === 1','captured hidden horse reveals');
+  assert.equal(await evaluate('document.querySelector("[data-capture-reveal] .stone").textContent'),'马');
+  assert.equal(await evaluate('document.querySelector("[data-capture-reveal]").hasAttribute("data-red")'),false);
+  assert.equal(await evaluate('document.querySelectorAll("[data-blind-role]").length'),0);
+  await screenshot('chess-blind-captured-reveal');
+  await wait('document.querySelector("#board-motion").children.length === 0','captured identity fades out');
+  assert.equal(await evaluate('document.querySelector("#red-player .capture-list").textContent.includes("马")'),true);
+  await click('#undo');
+  assert.equal(await evaluate('window.__qaBlindState.identities[27]'),-4);
+  await move(36,27);
+  await wait('document.querySelector("[data-capture-reveal]") && Number(getComputedStyle(document.querySelector("[data-capture-reveal]")).opacity) === 1','repeat capture reveal');
+  await click('#undo');
+  assert.equal(await evaluate('document.querySelector("#board-motion").children.length'),0);
+  assert.equal(await evaluate('document.querySelectorAll("#board [data-moving]").length'),0);
+  assert.equal(await evaluate('window.__qaBlindState.hidden[27]'),true);
+  await sleep(1100);
+  assert.equal(await evaluate('document.querySelector("#move-count").textContent'),'0 步');
+  assert.equal(await evaluate('document.querySelector("#board-motion").children.length'),0);
+  await openGame('blind','red',blindFixture({40:5}));
+  await move(40,4);
+  await wait('document.querySelector("#result-dialog").open','king capture ends blind game');
+  assert.equal(await evaluate('document.querySelector("#result-title").textContent'),'你赢了');
+  assert.match(await evaluate('document.querySelector("#result-detail").textContent'),/黑方将帅已被吃/);
+  await click('#result-undo');
+  await wait('document.querySelector("#move-count").textContent === "0 步"','undo king capture');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(5) .stone").textContent'),'将');
+  await openGame('blind','red',blindFixture({81:5},{81:-7}));
+  await move(81,85);
+  await wait('document.querySelector("#result-dialog").open','self-inflicted king capture ends game');
+  assert.equal(await evaluate('document.querySelector("#result-title").textContent'),'电脑获胜');
+  assert.match(await evaluate('document.querySelector("#move-list").textContent'),/误伤红帅/);
+  assert.equal(await evaluate('document.querySelector("#red-player .capture-list").textContent.includes("帅")'),true);
+  await click('#result-undo');
+  await wait('document.querySelector("#move-count").textContent === "0 步"','restore hidden identity after self-capture');
+  assert.equal(await evaluate('document.querySelectorAll("#board [data-blind]").length'),1);
+  await click('#restart'); await click('input[name="opening-mode"][value="casual"]'); await click('#restart-dialog button[value="restart"]');
+  await wait('document.querySelector("#mode-label").textContent === "娱乐对局"','switch back to ordinary chess');
+  assert.equal(await evaluate('document.querySelectorAll("#board [data-blind]").length'),0);
+  await click('#board .intersection:nth-child(86)');
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(68)").hasAttribute("data-target")'),false);
+  assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(77)").hasAttribute("data-target")'),true);
+  await send('Page.removeScriptToEvaluateOnNewDocument',{identifier:blindHook.identifier});
+  console.log('PASS blind chess: concealment, original-slot movement, landing reveal, undercover allegiance, undo, public-only AI Worker, black-side/mobile, king capture, friendly fire and mode isolation');
+  if (blindOnly) { assert.deepEqual(errors,[]); ws.close(); return; }
 
   await navigate('posts/editor.html');
   await fill('#editor-title', '集成验证帖子'); await fill('#editor-id', 'qa-post');
@@ -315,7 +537,7 @@ async function main() {
   await wait('document.querySelector("#preview-content strong")?.textContent === "测试内容"', 'editor preview');
   await send('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: temp });
   await click('#post-form button[type=submit]');
-  await wait('document.querySelector("#editor-message").textContent.includes("已导出全部 2 篇")', 'export');
+  await wait('document.querySelector("#editor-message").textContent.includes("已导出全部 3 篇")', 'export');
   await until(async () => { try { return (await fs.stat(path.join(temp, 'posts.js'))).size > 0; } catch { return false; } }, 5000, 'export download');
   const data = await fs.readFile(path.join(temp,'posts.js'), 'utf8');
   assert.match(data, /chess-practice-and-sandbox/); assert.match(data, /qa-post/);
@@ -332,4 +554,4 @@ async function until(fn, timeout, label) {
   while (Date.now() < deadline) { if (await fn()) return; await sleep(100); }
   throw new Error('Timed out: ' + label);
 }
-main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { if (chrome) chrome.kill(); });
+main().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { if (chrome) chrome.kill(); if (quoteServer) { quoteServer.closeAllConnections(); quoteServer.close(); } });

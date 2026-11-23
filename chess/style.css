@@ -32,6 +32,23 @@
 .is-sandbox .player-captures { visibility: hidden; }
 .action:disabled { opacity: .5; cursor: default; }
 @media (max-width: 600px) { .record.training-panel, .record.sandbox-panel { padding: 1rem; } }
+.levels.opening-mode-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.levels.opening-mode-options label:nth-child(2n+1) span { border-inline-start: 1px solid var(--rule-dark); }
+.levels.opening-mode-options label:nth-child(n+3) span { border-block-start: 0; }
+.record.blind-panel { padding: 1.1rem; max-height: none; overflow: visible; }
+.blind-panel .record-heading { padding: 0; margin-bottom: .75rem; }
+.blind-panel p { font-size: .875rem; line-height: 1.8; color: var(--muted); margin: .65rem 0; }
+:is(.intersection, .motion-square)[data-blind] .stone {
+  position: relative;
+  background: #494136;
+  color: #f5e6c5;
+  border-color: #40372c;
+  box-shadow: 0 2px 0 #342b23, inset 0 0 0 2px #494136, inset 0 0 0 3px #b7a380;
+  font-size: 4.7cqw;
+}
+.motion-square[data-capture-back] { z-index: 4; }
+.motion-square[data-capture-reveal] { z-index: 5; }
+.motion-square[data-capture-reveal] .stone { outline: 2px solid #b69a68; outline-offset: 3px; }
 :root {
   color-scheme: light;
   --paper: #f3eee3;

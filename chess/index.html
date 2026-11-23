@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <style>html { background: #f8f7f3; }</style>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="离线中国象棋，支持技能挑战、娱乐对局、杀棋练习和无限悔棋。">
+  <meta name="description" content="离线中国象棋，支持技能挑战、娱乐对局、练习、盲棋和无限悔棋。">
   <title>中国象棋</title>
   <link rel="stylesheet" href="../assets/page-transition.css?v=20261123-5">
   <script src="../assets/page-transition.js?v=20261123-5" data-title="象棋" data-wait="game"></script>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261123-blind2">
   <script defer src="skills.js"></script>
   <script defer src="engine.js"></script>
+  <script defer src="blind.js"></script>
   <script defer src="training.js"></script>
-  <script defer src="game.js"></script>
+  <script defer src="game.js?v=20261123-blind2"></script>
 </head>
 <body>
   <header class="masthead">
@@ -118,6 +119,13 @@
         </label>
       </section>
 
+      <section class="record blind-panel" id="blind-panel" aria-labelledby="blind-title" hidden>
+        <div class="record-heading"><h2 id="blind-title">盲棋规则</h2><span id="blind-remaining">30 枚暗子</span></div>
+        <p>将帅保留开局位置，其余 30 枚棋子混合打乱。只能操作己方半场的暗子，先按开局棋位走，落子后自动翻开，之后按真实颜色与身份操作。</p>
+        <p>暗子可吃己方棋子；未翻开的棋子视为卧底，明子也可吃任意暗子。将帅可在己方九宫任意跳走，明士、明象可过河，兵卒不能后退。</p>
+        <p>不强制应将，将帅被吃立即结束，自残误伤己方将帅也会输。电脑不预读暗子身份。</p>
+      </section>
+
       <section class="record sandbox-panel" id="sandbox-section" aria-labelledby="sandbox-title" hidden>
         <div class="record-heading"><h2 id="sandbox-title">沙盘推演</h2><span id="sandbox-state">独立试走</span></div>
         <p id="sandbox-summary">从当前局面开始，双方轮流试走。退出后恢复原对局。</p>
@@ -170,12 +178,14 @@
       <p id="restart-warning" hidden>当前对局和走棋记录会清空。</p>
       <fieldset class="settings opening-settings">
         <legend>模式</legend>
-        <div class="levels">
+        <div class="levels opening-mode-options">
           <label><input type="radio" name="opening-mode" value="challenge" checked><span>挑战模式</span></label>
           <label><input type="radio" name="opening-mode" value="casual"><span>娱乐对局</span></label>
           <label><input type="radio" name="opening-mode" value="practice"><span>练习模式</span></label>
+          <label><input type="radio" name="opening-mode" value="blind"><span>盲棋模式</span></label>
         </div>
         <p class="practice-setup" id="practice-setup" hidden>按普通象棋规则对弈，提供参考走法、受攻击棋子提示和一步杀预警，可进入沙盘试走。</p>
+        <p class="practice-setup" id="blind-setup" hidden>将帅保留原位，其余棋子混合打乱。暗子按开局棋位走一步后翻开，可能翻成对方棋子；允许误伤，将帅被吃即结束。</p>
       </fieldset>
       <fieldset class="settings opening-settings">
         <legend>执棋方（红方先走）</legend>

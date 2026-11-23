@@ -2,7 +2,10 @@
 (() => {
   "use strict";
 
-  const engine = window.Xiangqi;
+  const baseEngine = window.Xiangqi;
+  let engine = baseEngine;
+  const blindRules = window.createBlindChess(baseEngine);
+  let blindState = null;
   const { RED, BLACK, KING, GUARD, ELEPHANT, HORSE, ROOK, CANNON, PAWN, ISLAND } = engine;
   const skillEffects = new Map([
     [GUARD, "march", "shift"], [ELEPHANT, "boat", "sweep"], [HORSE, "pegasus", "cloak"],
@@ -795,6 +798,10 @@
       const dx = (engine.col(origin) - engine.col(destination)) * width / 9;
       const dy = (engine.row(origin) - engine.row(destination)) * height / 10;
       const sprite = motionPiece(to, position[to], button.hasAttribute("data-check"));
+      if (entry.change?.sourceHidden) {
+        sprite.setAttribute("data-blind", "");
+        sprite.querySelector(".stone").textContent = "暗";
+      }
       buttons.push(button);
       button.setAttribute("data-moving", "");
       let frames = [
@@ -821,9 +828,33 @@
       animations.push(animation);
       return animation;
     }
+    let captureReveal;
     if (captured) {
       const sprite = motionPiece(effectSquare, captured);
-      animations.push(sprite.animate([
+      if (entry.change?.targetHidden) {
+        sprite.setAttribute("data-blind", "");
+        sprite.querySelector(".stone").textContent = "暗";
+        sprite.setAttribute("data-capture-back", "");
+        const impact = duration * landingOffset;
+        const halfTurn = impact + 80, opened = impact + 160;
+        const holdEnd = opened + 440, revealDuration = holdEnd + 160;
+        const front = motionPiece(effectSquare, captured);
+        front.setAttribute("data-capture-reveal", "");
+        animations.push(sprite.animate([
+          { opacity: 1, transform: "scaleX(1)" },
+          { opacity: 1, transform: "scaleX(1)", offset: impact / revealDuration },
+          { opacity: 0, transform: "scaleX(0)", offset: halfTurn / revealDuration },
+          { opacity: 0, transform: "scaleX(0)" }
+        ], { duration: revealDuration, fill: "both" }));
+        captureReveal = front.animate([
+          { opacity: 0, transform: "translateY(-12%) scaleX(0)" },
+          { opacity: 0, transform: "translateY(-12%) scaleX(0)", offset: halfTurn / revealDuration },
+          { opacity: 1, transform: "translateY(-12%) scale(1.12)", offset: opened / revealDuration, easing: "ease-out" },
+          { opacity: 1, transform: "translateY(-12%) scale(1.12)", offset: holdEnd / revealDuration, easing: "ease-in" },
+          { opacity: 0, transform: "translateY(-28%) scale(.94)" }
+        ], { duration: revealDuration, fill: "both" });
+        animations.push(captureReveal);
+      } else animations.push(sprite.animate([
         { opacity: 1 }, { opacity: 1, offset: landingOffset }, { opacity: 0, offset: 0.93 }, { opacity: 0 }
       ], { duration, fill: "both" }));
     }
@@ -833,7 +864,9 @@
         { opacity: 1, transform: transform(0, 0, 1) }, { opacity: 0, transform: transform(0, 0, 0.55) }
       ], { duration: duration * 0.42, easing: "ease-in", fill: "both" }));
     }
-    const animation = slide(move.from, move.to);
+    const travel = slide(move.from, move.to);
+    // AI、棋谱与结算均等待翻面结束；悔棋和重开统一取消整组动画。
+    const animation = captureReveal || travel;
     if (move.kind === "swap") slide(move.to, move.from);
     const impactTime = duration * landingOffset;
     const effects = showMoveEffects(entry, impactTime);
@@ -851,6 +884,9 @@
       if (activeMovement !== movement) return;
       activeMovement = null;
       clearMovingPieces(buttons);
+      if (entry.change?.sourceHidden && cells[move.to].stone.animate) cells[move.to].stone.animate(
+        [{ transform: "scaleX(.3)", opacity: .5 }, { transform: "scaleX(1)", opacity: 1 }], { duration: 180, easing: "ease-out" }
+      );
       if (captured && !draftPreview) renderCaptures();
     }
     animation.finished.then(finishMovement, finishMovement);
@@ -876,11 +912,12 @@
     const action = sweepSelection ? "，可扫穴击杀" : compensation ? "，可补偿击杀" : conversionSquares ? "，可附体" : "，可落子";
     cells.forEach(({ button, stone, warning }, square) => {
       const piece = position[square];
+      const covered = Boolean(blindState?.hidden[square]);
       const level = piece * humanSide > 0 ? skills?.levels[Math.abs(piece)] : 0;
       const hidden = engine.hiddenHorse(position, square, skills, hiddenSide);
       const previewPiece = draftPreview && piece === humanSide * draftPreview.type;
       const skill = level ? engine.cards[Math.abs(piece)][level - 1][0] : "";
-      const name = piece ? sideName(Math.sign(piece)) + engine.pieceName(piece) : "空位";
+      const name = covered ? "暗子，走后自动翻开" : piece ? sideName(Math.sign(piece)) + engine.pieceName(piece) : "空位";
       const target = destinations.has(square);
       const restrictedHere = restricted.has(square);
       const view = viewSquare(square);
@@ -898,6 +935,7 @@
       const pressed = String(square === selected);
       if (button.getAttribute("aria-pressed") !== pressed) button.setAttribute("aria-pressed", pressed);
       button.toggleAttribute("data-red", piece > 0);
+      button.toggleAttribute("data-blind", covered);
       button.toggleAttribute("data-occupied", Boolean(piece));
       button.toggleAttribute("data-playable", Boolean(canSelect && piece * (sandbox ? activeSide : humanSide) > 0));
       const risk = risks.find(risk => risk.square === square);
@@ -915,7 +953,7 @@
       if (restrictedHere && warning.textContent !== marker) warning.textContent = marker;
       button.toggleAttribute("data-check", square === checkedSquare);
       stone.toggleAttribute("hidden", !piece);
-      const glyph = engine.pieceName(piece);
+      const glyph = covered ? "暗" : engine.pieceName(piece);
       if (stone.textContent !== glyph) stone.textContent = glyph;
     });
     drawGuides();
@@ -1108,6 +1146,11 @@
   }
 
   function describeResult(outcome) {
+    if (outcome.reason === "king-captured") {
+      const winner = sideName(outcome.winner), loser = sideName(-outcome.winner);
+      return { mark: outcome.winner === RED ? "红" : "黑", title: outcome.winner === humanSide ? "你赢了" : "电脑获胜",
+        detail: loser + "将帅已被吃，" + winner + "获胜。", tone: outcome.winner === RED ? "red" : "black" };
+    }
     if (outcome.reason === "repetition") {
       return { mark: "和", title: "本局和棋", detail: "同一局面已出现三次。", tone: "neutral" };
     }
@@ -1151,6 +1194,10 @@
     } else if (result) {
       const summary = describeResult(result);
       setStatus(summary.mark, summary.title, summary.detail, summary.tone);
+    } else if (blindState) {
+      const last = history.at(-1)?.change;
+      const reveal = last?.revealed ? "刚才翻出" + namedPiece(last.revealed) + (last.revealed * last.actor < 0 ? "，是对方卧底。" : "。") : "";
+      setStatus("暗", turn !== humanSide ? "电脑思考中" : "轮到你走", reveal + (turn !== humanSide ? "电脑只依据公开棋面和剩余暗子种类选棋。" : canPass ? "当前无棋可走，可以待机。" : "暗子按棋位走后翻开，可误伤己方棋子；将帅被吃即结束。"), "neutral");
     } else if (practice?.warning && !practice.demonstrating) {
       setStatus("练", "杀棋预警", "电脑下一手可将死你。可在棋盘下查看杀法、悔棋或继续。", "neutral");
     } else if (turn !== humanSide) {
@@ -1256,13 +1303,13 @@
 
   function renderCaptures() {
     const counts = { [RED]: new Map(), [BLACK]: new Map() };
-    function count(piece) {
+    function count(piece, actor = null) {
       if (!piece) return;
-      const captures = counts[-Math.sign(piece)];
+      const captures = counts[actor ?? -Math.sign(piece)];
       captures.set(piece, (captures.get(piece) ?? 0) + 1);
     }
     for (const entry of history) {
-      if (entry !== activeMovement?.entry) count(entry.captured);
+      if (entry !== activeMovement?.entry) count(entry.captured, blindState ? entry.actor : null);
       for (const reward of entry.compensations ?? []) count(reward.captured);
     }
 
@@ -1307,9 +1354,12 @@
   function refresh() {
     checked = engine.inCheck(board, turn, undefined, challenge);
     const noMoves = !offer && !engine.legalMoves(board, turn, null, true, challenge).length;
-    canPass = noMoves && turn === humanSide && engine.kingOnIsland(board, turn);
+    canPass = noMoves && turn === humanSide && (Boolean(blindState) || engine.kingOnIsland(board, turn));
     if (offer || !started) {
       result = null;
+    } else if (blindState) {
+      result = !board.includes(RED * KING) ? { winner: BLACK, reason: "king-captured" }
+        : !board.includes(BLACK * KING) ? { winner: RED, reason: "king-captured" } : null;
     } else if (noMoves && !canPass) {
       result = { winner: -turn, reason: checked ? "checkmate" : "stalemate" };
       if (mode === "casual" && turn === BLACK && humanSide === BLACK) result.reason = "island-offer";
@@ -1324,6 +1374,8 @@
     renderRecord();
     renderSkills();
     renderPractice();
+    byId("blind-panel").hidden = !blindState;
+    if (blindState) byId("blind-remaining").textContent = blindState.hidden.filter(Boolean).length + " 枚暗子";
     syncTraining();
   }
 
@@ -1504,6 +1556,16 @@
   }
 
   function playMove(move) {
+    if (blindState) {
+      const actor = turn, covered = blindState.hidden[move.from];
+      const label = (covered ? "暗" : "") + baseEngine.notation(board, move);
+      const change = engine.applyMove(board, move);
+      const notes = [];
+      if (change.captured) notes.push((change.captured * actor > 0 ? "误伤" : "吃") + namedPiece(change.captured));
+      if (change.revealed) notes.push("翻出" + namedPiece(change.revealed) + (change.revealed * actor < 0 ? "（卧底）" : ""));
+      recordTurn({ move, label, actor, note: notes.join(" · "), captured: change.captured, change });
+      return;
+    }
     if (draftPreview) {
       stopMovement();
       unlockSound();
@@ -1614,6 +1676,7 @@
         const legal = engine.legalMoves(board, -humanSide, null, false, challenge);
         const chosen = legal.find(candidate => candidate.from === move?.from && candidate.to === move?.to) ?? legal[0];
         if (chosen) playMove(chosen);
+        else if (blindState) recordTurn({ label: "待机", actor: turn });
       }, Math.max(0, Math.ceil(earliestReply - performance.now())));
     }
 
@@ -1627,6 +1690,7 @@
       if (searchJob !== job) return;
       const data = { board: board.slice(), side: -humanSide, difficulty: challenge ? "challenge" : difficulty,
         repetitions: Object.fromEntries(repetitions), skills: copyChallenge() };
+      if (blindState) data.blind = blindRules.publicState(blindState);
       const fallback = () => {
         if (searchJob === job) finish(engine.chooseMove(data.board, data.side, data.difficulty, data.repetitions, data.skills, 20));
       };
@@ -1683,6 +1747,8 @@
     riskPreview = null;
     stopComputer();
     clearPlayback();
+    blindState = begin && mode === "blind" ? blindRules.createState() : null;
+    engine = blindState ? blindRules.createEngine(blindState) : baseEngine;
     board = engine.initialBoard();
     turn = RED;
     started = begin;
@@ -1696,7 +1762,7 @@
     challenge = begin && mode === "challenge" ? engine.createSkills(humanSide, Math.floor(Math.random() * 0x100000000)) : null;
     prepareDraw();
     repetitions = new Map([[currentKey(), 1]]);
-    modeLabel.textContent = { challenge: "挑战模式", casual: "娱乐对局", practice: "练习模式" }[mode];
+    modeLabel.textContent = { challenge: "挑战模式", casual: "娱乐对局", practice: "练习模式", blind: "盲棋模式" }[mode];
     difficultySettings.hidden = mode === "challenge";
     convertButton.hidden = mode !== "casual";
     convertButton.parentElement.toggleAttribute("data-no-conversion", mode !== "casual");
@@ -1728,7 +1794,7 @@
 
   function syncTraining() {
     byId("sandbox-board-bar").hidden = !sandbox;
-    byId("sandbox-section").hidden = !started || mode === "challenge";
+    byId("sandbox-section").hidden = !started || mode === "challenge" || mode === "blind";
     byId("sandbox-enter").hidden = Boolean(sandbox);
     byId("sandbox-controls").hidden = !sandbox;
     byId("sandbox-enter").disabled = engine.kingOnIsland(board, BLACK);
@@ -1882,7 +1948,7 @@
     drawGuides();
   });
   byId("sandbox-enter").addEventListener("click", () => {
-    if (!started || mode === "challenge" || sandbox || engine.kingOnIsland(board, BLACK)) return;
+    if (!started || mode === "challenge" || mode === "blind" || sandbox || engine.kingOnIsland(board, BLACK)) return;
     stopComputer();
     clearPlayback();
     sandbox = new training.Sandbox(board, turn);
@@ -1988,6 +2054,7 @@
     restartDialog.querySelector('input[name="opening-side"][value="' + openingSide + '"]').checked = true;
     restartDialog.querySelector('input[name="opening-mode"][value="' + mode + '"]').checked = true;
     practiceSetup.hidden = mode !== "practice";
+    byId("blind-setup").hidden = mode !== "blind";
     restartDialog.returnValue = "cancel";
     restartDialog.showModal();
   }
@@ -1997,6 +2064,7 @@
   });
   restartDialog.addEventListener("change", event => {
     if (event.target.name === "opening-mode") practiceSetup.hidden = event.target.value !== "practice";
+    if (event.target.name === "opening-mode") byId("blind-setup").hidden = event.target.value !== "blind";
   });
   draftDialog.addEventListener("cancel", event => event.preventDefault());
   restartDialog.addEventListener("close", () => {
