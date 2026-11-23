@@ -53,13 +53,29 @@ test('capturing an unknown friendly or enemy identity reveals the correct captur
   game.engine.revertMove(game.board,{from:81,to:72},change);
   assert.deepEqual(game.board,board); assert.deepEqual(game.state,state);
 });
-test('kings can jump across their own palace, including blocked intermediate squares, and cannot leave it', () => {
-  const game = fixture({76:PAWN});
-  assert.equal(can(game,RED,85,67),true);
-  assert.equal(can(game,RED,85,66),true);
-  assert.equal(can(game,RED,85,58),false);
-  assert.equal(can(game,BLACK,4,23),true);
-  assert.equal(can(game,BLACK,4,32),false);
+test('red and black kings move one orthogonal square from every palace square, without diagonals or jumps', () => {
+  for (const side of [RED,BLACK]) for (let r=side===RED?7:0;r<=(side===RED?9:2);r++) for (let c=3;c<=5;c++) {
+    const game=fixture(), from=r*9+c;
+    game.board.fill(0);
+    game.board[from]=side*KING;
+    game.board[side===RED?4:85]=-side*KING;
+    const expected=[];
+    for(let nr=side===RED?7:0;nr<=(side===RED?9:2);nr++) for(let nc=3;nc<=5;nc++) {
+      if(Math.abs(nr-r)+Math.abs(nc-c)===1) expected.push(nr*9+nc);
+    }
+    assert.deepEqual(sorted(game.engine.legalMoves(game.board,side,from).map(move=>move.to)),sorted(expected));
+  }
+});
+
+test('kings cannot jump over allies and may only capture adjacent enemies or covered pieces', () => {
+  for (const side of [RED,BLACK]) {
+    const from=side===RED?85:4, adjacent=side===RED?76:13, distant=side===RED?67:22;
+    const blocked=fixture({[adjacent]:side*PAWN,[distant]:-side*ROOK});
+    assert.equal(can(blocked,side,from,adjacent),false);
+    assert.equal(can(blocked,side,from,distant),false);
+    assert.equal(can(fixture({[adjacent]:-side*ROOK}),side,from,adjacent),true);
+    assert.equal(can(fixture({[adjacent]:side*PAWN},{[adjacent]:-side*HORSE}),side,from,adjacent),true);
+  }
 });
 test('revealed guards cross the river diagonally; covered guard roles remain in the palace', () => {
   const open = fixture({49:GUARD});

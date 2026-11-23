@@ -43,9 +43,7 @@
         }
         switch (type) {
           case KING:
-            for (let nr = side === RED ? 7 : 0; nr < (side === RED ? 10 : 3); nr++) for (let nc = 3; nc <= 5; nc++) {
-              if (nr !== r || nc !== c) add(nr,nc);
-            }
+            for (const [dr,dc] of orthogonal) if (palace(r+dr,c+dc,side)) add(r+dr,c+dc);
             break;
           case GUARD:
             for (const [dr,dc] of diagonals) if (!covered || palace(r+dr,c+dc,side)) add(r+dr,c+dc);

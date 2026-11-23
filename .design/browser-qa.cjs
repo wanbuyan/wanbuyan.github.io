@@ -446,6 +446,10 @@ async function main() {
   assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(86) .stone").textContent'),'帅');
   assert.equal(await evaluate('document.querySelector("#board .intersection:nth-child(5) .stone").textContent'),'将');
   const blindOpening = await boardState();
+  await click('#board .intersection:nth-child(86)');
+  assert.deepEqual(await evaluate('[...document.querySelectorAll("#board .intersection")].flatMap((cell,i)=>cell.hasAttribute("data-target")?[i]:[])'),[76,84,86]);
+  await click('#board .intersection:nth-child(68)');
+  assert.equal(await evaluate('document.querySelector("#move-count").textContent'),'0 步');
   await click('#board .intersection:nth-child(28)');
   assert.equal(await evaluate('document.querySelector("#move-count").textContent'),'0 步');
   assert.equal(await evaluate('document.querySelectorAll("[data-blind-role]").length'),0);
