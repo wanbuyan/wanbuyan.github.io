@@ -5,6 +5,13 @@
  * size 单位为字节，可以省略；type 可选 document、code、image、other，默认按后缀分类。
  */
 window.BLOG_RESOURCES = [
+  {
+    name: "DC-3全流程——万不言.docx",
+    path: "DC-3全流程——万不言.docx",
+    type: "document",
+    size: 9453018,
+    description: "DC-3 靶场全流程，包含 Joomla 扫描、SQL 注入、账号获取、终端连接与本地提权。对应帖子可在“帖子”栏目阅读。"
+  },
   ...(window.BLOG_ARTWORKS || []).map(artwork => ({
     name: artwork.fileName,
     path: artwork.path,

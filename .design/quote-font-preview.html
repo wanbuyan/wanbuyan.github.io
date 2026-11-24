@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>金句字体对比</title>
+  <style>
+    :root { color-scheme: light; --paper:#f8f7f3; --ink:#292a26; --muted:#717368; --rule:#dedfd6; --accent:#a93627; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font-family:"Microsoft YaHei",sans-serif; }
+    main { max-width:1200px; margin:auto; padding:42px 64px 28px; }
+    header { display:flex; align-items:baseline; justify-content:space-between; padding-bottom:28px; }
+    h1 { font-size:25px; font-weight:600; margin:0; letter-spacing:.04em; }
+    header p { color:var(--muted); font-size:13px; margin:0; }
+    section { border-top:1px solid var(--rule); padding:22px 0 30px; }
+    .label { display:flex; align-items:center; gap:12px; }
+    .letter { color:var(--accent); font-size:13px; font-weight:600; }
+    h2 { font-size:15px; font-weight:500; margin:0; }
+    .note { color:var(--muted); margin-left:auto; font-size:12px; }
+    .recommended { color:var(--accent); }
+    figure { margin:29px 0 0; text-align:center; }
+    blockquote { margin:0; }
+    .quote { margin:0; font-size:32px; font-weight:400; line-height:1.85; letter-spacing:.025em; font-synthesis:none; }
+    .serif .quote { font-family:"Noto Serif SC",serif; }
+    .kai .quote { font-family:"KaiTi",serif; }
+    .fang .quote { font-family:"STFangsong",serif; }
+    .xing .quote { font-family:"STXingkai",serif; }
+    figcaption { margin-top:19px; color:var(--muted); font-size:13px; letter-spacing:.12em; line-height:1.8; }
+    figcaption span { margin-right:12px; }
+    footer { border-top:1px solid var(--rule); padding-top:18px; color:var(--muted); font-size:12px; }
+    @media(max-width:700px) {
+      main { padding:28px 24px; }
+      header { display:block; } header p { margin-top:12px; }
+      section { padding-bottom:28px; }
+      .label { flex-wrap:wrap; gap:8px; }
+      .note { margin-left:auto; }
+      .quote { font-size:25px; line-height:1.9; }
+      figure { margin-top:24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header><h1>金句字体对比</h1><p>四组使用相同字号、字重、字距与行距</p></header>
+    <section class="serif">
+      <div class="label"><span class="letter">A</span><h2>Noto Serif SC · 宋体</h2><span class="note">清晰、端正</span></div>
+      <figure><blockquote><p class="quote">昨夜西风凋碧树，独上高楼，望尽天涯路。</p></blockquote><figcaption><span>摘自 ·</span>晏殊《蝶恋花》</figcaption></figure>
+    </section>
+    <section class="kai">
+      <div class="label"><span class="letter">B</span><h2>楷体 · KaiTi</h2><span class="note recommended">推荐 · 适合古诗词</span></div>
+      <figure><blockquote><p class="quote">昨夜西风凋碧树，独上高楼，望尽天涯路。</p></blockquote><figcaption><span>摘自 ·</span>晏殊《蝶恋花》</figcaption></figure>
+    </section>
+    <section class="fang">
+      <div class="label"><span class="letter">C</span><h2>华文仿宋 · STFangsong</h2><span class="note">细长、疏朗</span></div>
+      <figure><blockquote><p class="quote">昨夜西风凋碧树，独上高楼，望尽天涯路。</p></blockquote><figcaption><span>摘自 ·</span>晏殊《蝶恋花》</figcaption></figure>
+    </section>
+    <section class="xing">
+      <div class="label"><span class="letter">D</span><h2>华文行楷 · STXingkai</h2><span class="note">笔意更明显</span></div>
+      <figure><blockquote><p class="quote">昨夜西风凋碧树，独上高楼，望尽天涯路。</p></blockquote><figcaption><span>摘自 ·</span>晏殊《蝶恋花》</figcaption></figure>
+    </section>
+    <footer>字体预览 · 使用本机字体实际渲染</footer>
+  </main>
+</body>
+</html>

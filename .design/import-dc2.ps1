@@ -1,10 +1,14 @@
-param([string]$Source = 'posts/files/DC-2靶场全流程——万不言.docx')
+param(
+  [string]$Source = 'posts/files/DC-2靶场全流程——万不言.docx',
+  [string]$ImageFolder = 'posts/images/dc2',
+  [string]$Output = '.design/qa/dc2-extracted.json'
+)
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $siteRoot = Split-Path $PSScriptRoot -Parent
 $sourcePath = Join-Path $siteRoot $Source
-$imageDir = Join-Path $siteRoot 'posts/images/dc2'
-$outputPath = Join-Path $siteRoot '.design/qa/dc2-extracted.json'
+$imageDir = Join-Path $siteRoot $ImageFolder
+$outputPath = Join-Path $siteRoot $Output
 New-Item -ItemType Directory -Force -Path $imageDir, (Split-Path $outputPath) | Out-Null
 $archive = [IO.Compression.ZipFile]::OpenRead($sourcePath)
 try {
@@ -40,7 +44,7 @@ try {
           $fileName = 'screenshot-{0:D2}{1}' -f ($imageMap.Count + 1), [IO.Path]::GetExtension($entry.FullName)
           $imagePath = Join-Path $imageDir $fileName
           [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $imagePath, $true)
-          $imageMap[$target] = "posts/images/dc2/$fileName"
+          $imageMap[$target] = "$($ImageFolder.Replace('\','/'))/$fileName"
         }
         $parts.Add(@{ type = 'image'; src = $imageMap[$target] })
       } elseif ($node.LocalName -eq 'tab') { $text.Append("`t") | Out-Null
