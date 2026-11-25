@@ -1,6 +1,14 @@
 // 帖子按日期倒序显示。可使用 posts/editor.html 编辑并导出此文件。
 window.BLOG_POSTS = [
   {
+    "id": "dc4-walkthrough",
+    "title": "DC4——万不言",
+    "date": "2026-11-25",
+    "category": "靶场记录",
+    "excerpt": "DC-4 实验记录：端口扫描、后台登录验证、命令执行与交互式 Shell，附 5 张原始截图和 Word 文档。",
+    "content": "DC-4 靶场实验记录，包含端口扫描、HTTP 后台登录、命令执行和交互式 Shell。\n\n## 靶机与开放端口\n\n![靶机与开放端口，原文截图 1](posts/images/dc4/screenshot-01.png)\n\n靶机 IP 为 `192.168.139.136`。\n\n![靶机与开放端口，原文截图 2](posts/images/dc4/screenshot-02.png)\n\n端口 `22`：SSH。\n\n端口 `80`：HTTP。\n\n## HTTP 后台与登录验证\n\n![HTTP 后台与登录验证，原文截图 3](posts/images/dc4/screenshot-03.png)\n\n访问 80 端口的页面，进入 Admin Information Systems 登录界面。\n\n进行账号密码爆破。原图中标出的用户名为 `admin`，密码为 `happy`。\n\n![HTTP 后台与登录验证，原文截图 4](posts/images/dc4/screenshot-04.png)\n\n## 命令执行\n\n登录后台后发现命令执行漏洞。原文记录通过抓包修改命令内容来执行其他命令。\n\n## 交互式 Shell\n\n原文记录已取得交互式 Shell，下图为对应的连接记录。\n\n![交互式 Shell，原文截图 5](posts/images/dc4/screenshot-05.png)\n\n## 原始文档\n\n[下载 DC4 Word 原件](资料/DC4——万不言.docx)"
+  },
+  {
     "id": "dc3-walkthrough",
     "title": "DC-3全流程——万不言",
     "date": "2026-11-24",

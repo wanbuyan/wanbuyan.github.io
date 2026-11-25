@@ -1,3 +1,5 @@
 /.design/qa/
 /.design/workbook/node_modules/
 /.design/workbook/outputs/
+/.design/obsidian-build/
+/.design/obsidian-entry.json
