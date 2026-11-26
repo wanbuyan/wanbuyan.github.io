@@ -6,6 +6,13 @@
  */
 window.BLOG_RESOURCES = [
   {
+    name: "DC5——万不言  文件包含  脚本提权.docx",
+    path: "DC5——万不言  文件包含  脚本提权.docx",
+    type: "document",
+    size: 2171803,
+    description: "DC-5 靶场实验记录，包含文件包含、错误日志利用、交互式 Shell 与脚本提权，附原始截图。对应帖子可在“帖子”栏目阅读。"
+  },
+  {
     name: "DC4——万不言.docx",
     path: "DC4——万不言.docx",
     type: "document",

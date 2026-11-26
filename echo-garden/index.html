@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101d21">
+  <meta name="description" content="回声庭院：录制与回放路线，利用影子开启机关。六关解谜游戏。">
+  <title>回声庭院 | 万不言的博客</title>
+  <style>html{background:#f8f7f3}</style>
+  <link rel="stylesheet" href="../assets/page-transition.css?v=20261123-5">
+  <script src="../assets/page-transition.js?v=20261123-5" data-title="回声庭院" data-wait="game"></script>
+  <link rel="stylesheet" href="style.css?v=3">
+  <script defer src="levels.js?v=2"></script>
+  <script defer src="engine.js?v=2"></script>
+  <script defer src="audio.js?v=4"></script>
+  <script defer src="art.js?v=4"></script>
+  <script defer src="scene.js?v=4"></script>
+  <script defer src="game.js?v=4"></script>
+</head>
+<body>
+  <svg class="svg-library" aria-hidden="true"><defs>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7M7 12h14"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="M8 5 3 10l5 5M3 10h11a6 6 0 1 1 0 12" transform="translate(0 -3)"/></symbol>
+    <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24"><path d="M11 4 5 9H2v6h3l6 5V4ZM15 8a6 6 0 0 1 0 8M18 4a11 11 0 0 1 0 16"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 17V5l11-2v12M9 8l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2.5"/><ellipse cx="17" cy="16" rx="3" ry="2.5"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9a3 3 0 1 1 4 3c-1 .5-1 1-1 2M12 17h.01"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 5v15"/></symbol>
+    <symbol id="i-wait" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+  </defs></svg>
+  <div class="app" id="app" data-phase="ready">
+    <header class="topbar">
+      <a class="back-link" href="../index.html#games"><svg class="icon"><use href="#i-back"/></svg><span>自制游戏</span></a>
+      <h1>回声庭院</h1>
+      <div class="top-actions">
+        <button class="icon-button" id="music-toggle" type="button" aria-label="关闭音乐" aria-pressed="true" title="背景音乐"><svg class="icon"><use href="#i-music"/></svg><span class="sound-slash"></span></button>
+        <button class="icon-button" id="sound-toggle" type="button" aria-label="关闭音效" aria-pressed="true"><svg class="icon"><use href="#i-sound"/></svg><span class="sound-slash"></span></button>
+        <button class="icon-button" id="help-open" type="button" aria-label="游戏说明"><svg class="icon"><use href="#i-help"/></svg></button>
+      </div>
+    </header>
+    <main class="game-layout">
+      <section class="play-space" aria-labelledby="level-title">
+        <div class="level-info"><div class="level-heading"><div><p class="chapter" id="chapter">第 1 关 / 6</p><h2 id="level-title">机关</h2></div><span class="mode-label" id="mode-label">准备就绪</span></div>
+        <p class="level-subtitle" id="level-subtitle">用回放踩住 A，穿过右侧的门。</p></div>
+        <div class="board-stage" id="board-stage">
+          <canvas id="garden" width="756" height="588" role="img" aria-label="庭院棋盘，暖黄色角色需要收集光点并前往出口"></canvas>
+          <div class="start-panel" id="start-panel">
+            <div class="start-content"><div class="echo-mark" aria-hidden="true"><i></i><i></i></div><h2>回声庭院</h2><p>录制路线，再按 R 回到起点。<br>影子会重复行动，踩住沿途的机关。</p><button class="primary start-button" id="start-button" type="button">开始游戏</button><span class="start-note">开始后播放音乐，可在右上角关闭</span></div>
+          </div>
+        <section class="win-panel" id="win-panel" hidden aria-labelledby="win-title"><span class="win-symbol" aria-hidden="true"><svg class="icon"><use href="#i-check"/></svg></span><h3 id="win-title">本关完成</h3><p id="win-detail"></p><button class="primary" id="next-button" type="button">下一关</button></section>
+        </div>
+        <div class="board-bottom"><div class="legend"><span><i class="legend-player"></i>角色</span><span><i class="legend-echo"></i>回声</span><span><i class="legend-star"></i>光点</span><span><i class="legend-plate">A</i>机关</span></div><p class="keyboard-tip">方向键 / WASD 移动</p></div>
+        <div class="mobile-tools"><div class="touch-controls" aria-label="触屏方向控制">
+          <button class="direction up" data-command="up" aria-label="向上移动"><svg class="icon"><use href="#i-up"/></svg></button>
+          <button class="direction left" data-command="left" aria-label="向左移动"><svg class="icon"><use href="#i-up"/></svg></button>
+          <button class="direction center" data-command="wait" aria-label="等待一步"><svg class="icon"><use href="#i-wait"/></svg><span>等待</span></button>
+          <button class="direction right" data-command="right" aria-label="向右移动"><svg class="icon"><use href="#i-up"/></svg></button>
+          <button class="direction down" data-command="down" aria-label="向下移动"><svg class="icon"><use href="#i-up"/></svg></button>
+        </div><div class="mobile-actions"><button class="primary" id="mobile-record" type="button" disabled>开始录制</button><button class="secondary" id="mobile-undo" type="button" disabled><svg class="icon"><use href="#i-undo"/></svg>撤销</button></div></div>
+        <p class="board-caption" id="board-caption">集齐光点后进入出口。</p>
+      </section>
+      <aside class="control-space" aria-label="游戏控制与进度">
+        <div class="stats"><div><span>光点</span><strong id="star-count">0 / 1</strong></div><div><span>行动</span><strong id="turn-count">0</strong></div><div><span>最佳</span><strong id="best-count">—</strong></div></div>
+
+        <section class="record-panel" aria-label="路线录制">
+          <button class="primary record-button" id="record-button" type="button" disabled><span class="record-symbol" aria-hidden="true"></span><span id="record-label">开始录制</span><kbd>R</kbd></button>
+          <p class="record-description" id="record-description">按 R 录制，再按 R 回放。</p>
+          <div class="timeline-heading"><span id="timeline-title">录制步数</span><span id="timeline-count">0 / 10 步</span></div>
+          <ol class="timeline" id="timeline" aria-label="录制进度"></ol>
+          <p class="echo-state" id="echo-state">尚未录制</p>
+        </section>
+        <div class="secondary-actions"><button class="secondary" id="undo-button" disabled><svg class="icon"><use href="#i-undo"/></svg>撤销<kbd>Z</kbd></button><button class="secondary" id="reset-button" disabled><svg class="icon"><use href="#i-reset"/></svg>重置<kbd>U</kbd></button></div>
+        <button class="secondary wait-button" id="wait-button" disabled><svg class="icon"><use href="#i-wait"/></svg>等待一步<kbd>Space</kbd></button>
+        <p class="status" id="status" role="status" aria-live="polite">集齐光点后进入出口。</p>
+        <details class="hint" id="hint"><summary>本关提示</summary><p id="hint-text"></p></details>
+        <nav class="level-select" aria-label="选择庭院"><div class="level-select-heading"><h3>关卡</h3><span id="progress-count">已完成 0 / 6</span></div><div class="level-buttons" id="level-buttons"></div></nav>
+        <div class="motion-settings"><p class="save-note" id="save-note">进度保存在此浏览器</p><button class="motion-toggle" id="motion-toggle" type="button" aria-pressed="true">动画：流畅</button></div>
+      </aside>
+    </main>
+    <footer class="game-footer"><span>万不言的博客</span><span>录制 <kbd>R</kbd>　等待 <kbd>Space</kbd>　撤销 <kbd>Z</kbd></span></footer>
+  </div>
+  <dialog id="help-dialog" aria-labelledby="help-title"><form method="dialog"><button class="close-button secondary" aria-label="关闭说明">关闭</button></form><h2 id="help-title">操作说明</h2><ol class="help-steps"><li><strong>录制 · R</strong><p>按 R 开始录制。方向键或 WASD 移动，空格等待。移动和等待都占一步。</p></li><li><strong>回放 · R</strong><p>再按 R 回到起点。此后每行动一步，影子也按录制路线走一步，走完后停留在最后一格。</p></li><li><strong>开门</strong><p>角色或影子踩住 A / B 时，对应的门打开。集齐光点后进入出口即可通关。</p></li></ol><p class="help-note">回卷会恢复录制起点的光点状态，影子不能收集光点。撞墙、撞闭门不计步。重新录制会替换原影子；Z 撤销，U 重置关卡。</p><p class="help-note">音乐与音效在右上角分别开关。切换到其他标签页时暂停声音。关卡进度自动保存在当前浏览器。</p></dialog>
+  <noscript><p class="no-script">请启用浏览器 JavaScript 后游玩。此游戏不需要安装或启动服务。</p></noscript>
+</body>
+</html>

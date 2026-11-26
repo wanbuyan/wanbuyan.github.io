@@ -1,9 +1,12 @@
 "use strict";
 
 const games = [
+  { name: "回声庭院", href: "echo-garden/index.html", image: "assets/images/echo-cover.svg", alt: "回声庭院：黄色角色与青绿影子在机关旁", key: "echo", description: "录制与回放路线，利用影子开启机关", tags: ["路线解谜", "六关", "触屏可玩"] },
   { name: "象棋", href: "chess/index.html", image: "assets/images/chess-cover.svg", key: "chess", description: "盲棋、技能挑战、练习与沙盘推演", tags: ["盲棋", "练习指导", "沙盘推演"] },
   { name: "贪吃蛇", href: "gameGPT/neon-serpent/dist/index.html", image: "assets/images/snake-cover.svg", key: "snake", description: "随机强化、连击冲刺与触屏操作", tags: ["随机强化", "连击冲刺", "触屏可玩"] }
 ];
+
+document.querySelectorAll("[data-game-count]").forEach(label => { label.textContent = `${games.length} 款游戏`; });
 
 function icon(name, className = "icon") {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -26,7 +29,7 @@ for (const list of document.querySelectorAll("[data-game-list]")) {
     picture.setAttribute("aria-label", `打开${game.name}`);
     const img = new Image();
     img.src = game.image;
-    img.alt = game.name === "象棋" ? "中国象棋封面：楚河棋盘上的红黑棋子" : "贪吃蛇封面：深蓝赛场上的绿色蛇与食物";
+    img.alt = game.alt || (game.name === "象棋" ? "中国象棋封面：楚河棋盘上的红黑棋子" : "贪吃蛇封面：深蓝赛场上的绿色蛇与食物");
     img.width = game.key === "chess" ? 1000 : 1200;
     img.height = 900;
     img.loading = "lazy";
