@@ -6,6 +6,13 @@
  */
 window.BLOG_RESOURCES = [
   {
+    "name": "靶场与常见口令字典——万不言.zip",
+    "path": "密码字典/靶场与常见口令字典——万不言.zip",
+    "type": "other",
+    "size": 4951093,
+    "description": "精简版，1,102,934 条去重口令候选，保留原字典、公开靶场默认口令与高频常用口令。TXT 小于 10 MB，附来源与授权。不保证覆盖所有靶场。"
+  },
+  {
     name: "DC5——万不言  文件包含  脚本提权.docx",
     path: "DC5——万不言  文件包含  脚本提权.docx",
     type: "document",
